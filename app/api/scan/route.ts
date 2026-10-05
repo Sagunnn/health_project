@@ -51,10 +51,37 @@ const MODEL_CHAIN = [
   "gemini-3-flash-preview",
 ].filter((model): model is string => Boolean(model));
 
+/**
+ * Every configured Gemini key, in rotation order.
+ *
+ * Gemini's free tier meters requests per project per model per day, so a
+ * second key on a second project is a second allowance. Keys are tried in
+ * order and a quota failure moves to the next one, which keeps the scanner
+ * working past the point where a single free-tier key gives up.
+ *
+ * Reads GEMINI_API_KEY, then GEMINI_API_KEY_1..9, then the provider's own
+ * GOOGLE_GENERATIVE_AI_API_KEY. Blanks and duplicates are dropped so an
+ * unset slot in the middle does not waste an attempt.
+ */
+function apiKeys(): string[] {
+  const names = [
+    "GEMINI_API_KEY",
+    ...Array.from({ length: 9 }, (_, i) => `GEMINI_API_KEY_${i + 1}`),
+    "GOOGLE_GENERATIVE_AI_API_KEY",
+  ];
+  const seen = new Set<string>();
+  const keys: string[] = [];
+  for (const name of names) {
+    const value = process.env[name]?.trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    keys.push(value);
+  }
+  return keys;
+}
+
 function apiKey(): string | undefined {
-  return (
-    process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY
-  );
+  return apiKeys()[0];
 }
 
 /* ------------------------------------------------------------------ *
@@ -149,9 +176,10 @@ function coerceProfile(raw: unknown): AthleteProfile {
  * exhausted quota — long past Vercel's function timeout, so the athlete would
  * get a 504 instead of the manual-entry fallback.
  */
-const OCR_BUDGET_MS = 30_000;
+const OCR_BUDGET_MS = Number(process.env.OCR_BUDGET_MS ?? 45_000);
 
-type FailureKind = "quota" | "unavailable" | "network" | "timeout" | "other";
+type FailureKind =
+  "quota" | "auth" | "unavailable" | "network" | "timeout" | "other";
 
 /**
  * Classify a failure so the chain knows whether to keep going, and so the
@@ -178,16 +206,37 @@ function classify(error: unknown): FailureKind {
   }
   const message = parts.join(" ");
 
-  if (/RESOURCE_EXHAUSTED|exceeded your current quota|quota|rate limit|429/i.test(message)) {
+  if (
+    /RESOURCE_EXHAUSTED|exceeded your current quota|quota|rate limit|429/i.test(
+      message,
+    )
+  ) {
     return "quota";
+  }
+  // A rejected key is the whole reason rotation exists: it must move to the
+  // next key rather than failing the scan outright.
+  if (
+    /API_KEY_INVALID|api key not valid|api key expired|PERMISSION_DENIED|UNAUTHENTICATED|invalid authentication|\b401\b|\b403\b/i.test(
+      message,
+    )
+  ) {
+    return "auth";
   }
   if (/\bTimeoutError\b|\bAbortError\b|operation was aborted/i.test(message)) {
     return "timeout";
   }
-  if (/ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|EPIPE|socket hang up|Cannot connect to API|fetch failed/i.test(message)) {
+  if (
+    /ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|EPIPE|socket hang up|Cannot connect to API|fetch failed/i.test(
+      message,
+    )
+  ) {
     return "network";
   }
-  if (/no longer available|not found|high demand|overloaded|unavailable|503/i.test(message)) {
+  if (
+    /no longer available|not found|high demand|overloaded|unavailable|503/i.test(
+      message,
+    )
+  ) {
     return "unavailable";
   }
   return "other";
@@ -195,7 +244,10 @@ function classify(error: unknown): FailureKind {
 
 /** An error carrying why the whole chain gave up, for the user-facing copy. */
 class ExtractionFailure extends Error {
-  constructor(readonly kind: FailureKind, cause?: unknown) {
+  constructor(
+    readonly kind: FailureKind,
+    cause?: unknown,
+  ) {
     super(`Label extraction failed (${kind}).`, { cause });
   }
 }
@@ -207,73 +259,105 @@ interface VisionResult {
 }
 
 /** Runs the extraction, walking the model chain past retired/throttled models. */
-async function extractWithGemini(
-  imageBase64: string,
-): Promise<VisionResult> {
-  const key = apiKey();
-  if (!key) throw new Error("GEMINI_API_KEY is not configured.");
+async function extractWithGemini(imageBase64: string): Promise<VisionResult> {
+  const keys = apiKeys();
+  if (keys.length === 0) throw new Error("GEMINI_API_KEY is not configured.");
 
-  const google = createGoogleGenerativeAI({ apiKey: key });
   const { data, mimeType } = parseImage(imageBase64);
   const startedAt = Date.now();
   let lastError: unknown;
   let sawQuota = false;
   let sawNetwork = false;
   let sawTimeout = false;
+  let sawAuth = false;
+  // The reason the *last* attempt failed is what the athlete should be told:
+  // a key we successfully rotated past is an operator concern, not theirs.
+  let lastKind: FailureKind | undefined;
 
-  for (const model of MODEL_CHAIN) {
-    const remaining = OCR_BUDGET_MS - (Date.now() - startedAt);
-    // Leave enough headroom that an attempt can plausibly finish.
-    if (remaining < 5_000) break;
+  // Keys outer, models inner: a key whose quota is gone is gone for every
+  // model on that project, so exhausting its models first is the cheap way
+  // to establish that before paying for a rotation.
+  outer: for (let k = 0; k < keys.length; k++) {
+    const google = createGoogleGenerativeAI({ apiKey: keys[k] });
+    let keyExhausted = false;
 
-    try {
-      const result = await generateObject({
-        model: google(model),
-        schema: extractionSchema,
-        // One retry absorbs a transient socket failure; the chain handles
-        // everything slower-moving, and OCR_BUDGET_MS bounds the worst case.
-        maxRetries: 1,
-        abortSignal: AbortSignal.timeout(remaining),
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: EXTRACTION_PROMPT },
-              { type: "image", image: data, mimeType },
-            ],
+    for (const model of MODEL_CHAIN) {
+      const remaining = OCR_BUDGET_MS - (Date.now() - startedAt);
+      // Leave enough headroom that an attempt can plausibly finish.
+      if (remaining < 5_000) {
+        sawTimeout = true;
+        lastKind = "timeout";
+        break outer;
+      }
+
+      try {
+        const result = await generateObject({
+          model: google(model),
+          schema: extractionSchema,
+          // One retry absorbs a transient socket failure; the chain handles
+          // everything slower-moving, and OCR_BUDGET_MS bounds the worst case.
+          maxRetries: 1,
+          abortSignal: AbortSignal.timeout(remaining),
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: EXTRACTION_PROMPT },
+                { type: "image", image: data, mimeType },
+              ],
+            },
+          ],
+        });
+
+        if (k > 0) {
+          console.warn(`[scan] succeeded on key #${k + 1} after rotation`);
+        }
+        return {
+          extracted: {
+            productName: result.object.productName,
+            ingredients: result.object.ingredients,
           },
-        ],
-      });
+          isSupplement: result.object.isSupplement,
+          model,
+        };
+      } catch (cause) {
+        lastError = cause;
+        const kind = classify(cause);
+        lastKind = kind;
+        if (kind === "quota") {
+          sawQuota = true;
+          keyExhausted = true;
+        }
+        if (kind === "auth") sawAuth = true;
+        if (kind === "network") sawNetwork = true;
+        if (kind === "timeout") sawTimeout = true;
+        // Key material never reaches the log — only its position in rotation.
+        console.error(
+          `[scan] key #${k + 1}, model ${model} failed (${kind}):`,
+          cause,
+        );
+        if (kind === "other") throw new ExtractionFailure("other", cause);
+        if (kind === "auth") {
+          // The key itself is bad, so every model on it fails identically.
+          keyExhausted = true;
+          break;
+        }
+        // Quota is per-model and network faults are transient, so the next
+        // model in the chain may still succeed.
+      }
+    }
 
-      return {
-        extracted: {
-          productName: result.object.productName,
-          ingredients: result.object.ingredients,
-        },
-        isSupplement: result.object.isSupplement,
-        model,
-      };
-    } catch (cause) {
-      lastError = cause;
-      const kind = classify(cause);
-      if (kind === "quota") sawQuota = true;
-      if (kind === "network") sawNetwork = true;
-      if (kind === "timeout") sawTimeout = true;
-      console.error(`[scan] model ${model} failed (${kind}):`, cause);
-      if (kind === "other") throw new ExtractionFailure("other", cause);
-      // Quota is per-model and network faults are transient, so the next
-      // model in the chain may still succeed.
+    if (keyExhausted && k < keys.length - 1) {
+      console.warn(
+        `[scan] key #${k + 1} unusable (${sawAuth ? "rejected" : "quota"}), rotating to #${k + 2}`,
+      );
     }
   }
 
+  // Quota wins because it is the most actionable thing an athlete can be
+  // told; otherwise report whatever actually ended the attempt.
   throw new ExtractionFailure(
-    sawQuota
-      ? "quota"
-      : sawNetwork
-        ? "network"
-        : sawTimeout
-          ? "timeout"
-          : "unavailable",
+    sawQuota ? "quota" : (lastKind ?? "unavailable"),
     lastError,
   );
 }
@@ -302,6 +386,7 @@ export async function GET() {
     // Length only — catches a truncated paste or stray quotes without
     // revealing any part of the secret.
     keyLength: key ? key.length : 0,
+    keysConfigured: apiKeys().length,
     modelChain: MODEL_CHAIN,
     deployment: {
       vercelEnv: process.env.VERCEL_ENV ?? null,
@@ -382,18 +467,19 @@ export async function POST(request: Request) {
         console.error("[scan] label OCR failed:", cause);
         label = { productName: "Unrecognised product", ingredients: [] };
         extractionSource = "vision-llm";
-        const kind =
-          cause instanceof ExtractionFailure ? cause.kind : "other";
+        const kind = cause instanceof ExtractionFailure ? cause.kind : "other";
         warning =
           kind === "quota"
-            ? "The daily free-tier limit for label scanning has been reached. It resets within 24 hours — enter the ingredients manually in the meantime."
-            : kind === "network"
-              ? "Could not reach the label-scanning service — this is usually a connection problem. Try again, or enter the ingredients manually."
-              : kind === "timeout"
-                ? "Label scanning is busy and took too long, so it was stopped. Try again in a moment, or enter the ingredients manually."
-                : kind === "unavailable"
-              ? "The label-scanning service is temporarily unavailable. Enter the ingredients manually or use a demo preset."
-              : "Label OCR failed, so no ingredients could be read. Enter them manually or use a demo preset.";
+            ? `The daily free-tier limit for label scanning has been reached on ${apiKeys().length > 1 ? "all configured keys" : "the configured key"}. It resets within 24 hours — enter the ingredients manually in the meantime.`
+            : kind === "auth"
+              ? "The label-scanning key was rejected. Check GEMINI_API_KEY in your environment, then redeploy. You can still enter ingredients manually."
+              : kind === "network"
+                ? "Could not reach the label-scanning service — this is usually a connection problem. Try again, or enter the ingredients manually."
+                : kind === "timeout"
+                  ? "Label scanning is busy and took too long, so it was stopped. Try again in a moment, or enter the ingredients manually."
+                  : kind === "unavailable"
+                    ? "The label-scanning service is temporarily unavailable. Enter the ingredients manually or use a demo preset."
+                    : "Label OCR failed, so no ingredients could be read. Enter them manually or use a demo preset.";
       }
     }
   } else if (extracted) {
