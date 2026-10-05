@@ -95,7 +95,8 @@ await page.fill("#athlete-sport", "Archery");
 await page.fill("#athlete-discipline", "Recurve");
 await page.selectOption("#athlete-level", "National");
 await page.fill("#athlete-competition", tomorrow);
-await page.fill("#athlete-nado", "UKAD");
+// NADO is a <select> backed by data/nados.json, not a free-text input.
+await page.selectOption("#athlete-nado", "UKAD");
 await shot(page, "profile-filled");
 await page.getByRole("button", { name: /Save profile/i }).click();
 await page.waitForSelector("text=Profile saved");
