@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { Check, Calendar } from "lucide-react";
+import {
+  NADO_OTHER,
+  findNado,
+  isKnownNado,
+  nadosByRegion,
+} from "@/lib/nados";
 import type { AthleteProfile as AthleteProfileType } from "@/types";
 
 interface AthleteProfileProps {
@@ -29,10 +35,16 @@ export default function AthleteProfile({
 }: AthleteProfileProps) {
   const [draft, setDraft] = useState(profile);
   const [justSaved, setJustSaved] = useState(false);
+  // A stored NADO that is not in the list came from free text, so the form
+  // reopens in "Other" mode rather than silently discarding it.
+  const [nadoIsOther, setNadoIsOther] = useState(
+    () => profile.nado !== "" && !isKnownNado(profile.nado),
+  );
 
   // Keep the form in step when the parent finishes loading from localStorage.
   useEffect(() => {
     setDraft(profile);
+    setNadoIsOther(profile.nado !== "" && !isKnownNado(profile.nado));
   }, [profile]);
 
   useEffect(() => {
@@ -150,14 +162,50 @@ export default function AthleteProfile({
         <label htmlFor="athlete-nado" className={labelClass}>
           National Anti-Doping Organisation
         </label>
-        <input
+        <select
           id="athlete-nado"
-          type="text"
-          value={draft.nado}
-          onChange={(e) => update("nado", e.target.value)}
-          placeholder="e.g. UKAD, USADA, NADA"
+          value={nadoIsOther ? NADO_OTHER : draft.nado}
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value === NADO_OTHER) {
+              setNadoIsOther(true);
+              update("nado", "");
+            } else {
+              setNadoIsOther(false);
+              update("nado", value);
+            }
+          }}
           className={inputClass}
-        />
+        >
+          <option value="">Select your NADO</option>
+          {nadosByRegion().map(({ region, items }) => (
+            <optgroup key={region} label={region}>
+              {items.map((nado) => (
+                <option key={nado.code} value={nado.code}>
+                  {nado.code} — {nado.country}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+          <option value={NADO_OTHER}>Other / not listed…</option>
+        </select>
+
+        {nadoIsOther && (
+          <input
+            type="text"
+            value={draft.nado}
+            onChange={(e) => update("nado", e.target.value)}
+            placeholder="Name of your anti-doping organisation"
+            aria-label="Name of your anti-doping organisation"
+            className={`${inputClass} mt-2`}
+          />
+        )}
+
+        <p className="mt-1 text-xs text-slate-500">
+          {!nadoIsOther && findNado(draft.nado)
+            ? findNado(draft.nado)?.name
+            : "Used when a result tells you who to contact before using a product."}
+        </p>
       </div>
 
       <label className="flex items-start gap-3 rounded-lg border border-slate-300 bg-white px-3 py-3">

@@ -1,0 +1,41 @@
+{
+  "note": "National Anti-Doping Organisations offered in the athlete profile. The stored value is the short code, which is what the rules engine prints in its referral advice (\"Contact KADA or your team physician\"). Website URLs are deliberately omitted rather than shipped unverified — a wrong referral link in an anti-doping tool is worse than none.",
+  "organisations": [
+    { "code": "KADA", "name": "Korea Anti-Doping Agency", "country": "Republic of Korea", "region": "Asia" },
+    { "code": "CHINADA", "name": "China Anti-Doping Agency", "country": "China", "region": "Asia" },
+    { "code": "HKADC", "name": "Hong Kong Anti-Doping Committee", "country": "Hong Kong, China", "region": "Asia" },
+    { "code": "JADA", "name": "Japan Anti-Doping Agency", "country": "Japan", "region": "Asia" },
+    { "code": "NADA India", "name": "National Anti-Doping Agency India", "country": "India", "region": "Asia" },
+    { "code": "ADS", "name": "Anti-Doping Singapore", "country": "Singapore", "region": "Asia" },
+    { "code": "ADAMAS", "name": "Anti-Doping Agency of Malaysia", "country": "Malaysia", "region": "Asia" },
+    { "code": "QADC", "name": "Qatar Anti-Doping Commission", "country": "Qatar", "region": "Asia" },
+
+    { "code": "UKAD", "name": "UK Anti-Doping", "country": "United Kingdom", "region": "Europe" },
+    { "code": "NADA Germany", "name": "Nationale Anti Doping Agentur", "country": "Germany", "region": "Europe" },
+    { "code": "AFLD", "name": "Agence Française de Lutte contre le Dopage", "country": "France", "region": "Europe" },
+    { "code": "NADO Italia", "name": "Organizzazione Nazionale Antidoping", "country": "Italy", "region": "Europe" },
+    { "code": "CELAD", "name": "Comisión Española para la Lucha Antidopaje en el Deporte", "country": "Spain", "region": "Europe" },
+    { "code": "ADoP", "name": "Autoridade Antidopagem de Portugal", "country": "Portugal", "region": "Europe" },
+    { "code": "Dopingautoriteit", "name": "Doping Authority Netherlands", "country": "Netherlands", "region": "Europe" },
+    { "code": "Antidoping Norway", "name": "Antidoping Norge", "country": "Norway", "region": "Europe" },
+    { "code": "Antidoping Sweden", "name": "Antidoping Sverige", "country": "Sweden", "region": "Europe" },
+    { "code": "ADD", "name": "Anti Doping Denmark", "country": "Denmark", "region": "Europe" },
+    { "code": "FINCIS", "name": "Finnish Center for Integrity in Sports", "country": "Finland", "region": "Europe" },
+    { "code": "Antidoping Switzerland", "name": "Antidoping Schweiz", "country": "Switzerland", "region": "Europe" },
+    { "code": "NADA Austria", "name": "Nationale Anti-Doping Agentur Austria", "country": "Austria", "region": "Europe" },
+    { "code": "POLADA", "name": "Polish Anti-Doping Agency", "country": "Poland", "region": "Europe" },
+    { "code": "Sport Ireland", "name": "Sport Ireland Anti-Doping", "country": "Ireland", "region": "Europe" },
+
+    { "code": "USADA", "name": "United States Anti-Doping Agency", "country": "United States", "region": "Americas" },
+    { "code": "CCES", "name": "Canadian Centre for Ethics in Sport", "country": "Canada", "region": "Americas" },
+    { "code": "ABCD", "name": "Autoridade Brasileira de Controle de Dopagem", "country": "Brazil", "region": "Americas" },
+
+    { "code": "Sport Integrity Australia", "name": "Sport Integrity Australia", "country": "Australia", "region": "Oceania" },
+    { "code": "DFSNZ", "name": "Drug Free Sport New Zealand", "country": "New Zealand", "region": "Oceania" },
+
+    { "code": "SAIDS", "name": "South African Institute for Drug-Free Sport", "country": "South Africa", "region": "Africa" },
+    { "code": "ADAK", "name": "Anti-Doping Agency of Kenya", "country": "Kenya", "region": "Africa" },
+
+    { "code": "ITA", "name": "International Testing Agency", "country": "International federations", "region": "International" }
+  ]
+}
