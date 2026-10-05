@@ -10,7 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "verify:demo": "tsx scripts/verify-demo.ts",
-    "verify:guards": "tsx scripts/verify-guards.ts"
+    "verify:guards": "tsx scripts/verify-guards.ts",
+    "verify:vision": "tsx scripts/verify-vision.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",

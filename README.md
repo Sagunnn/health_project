@@ -128,7 +128,20 @@ key needed.
 
 Everything works without a key — on-device reading, presets and manual entry.
 A key is only needed for the *AI scan* button, used when a label will not read
-on the device. Get a free one from
+on the device.
+
+Two providers are supported and tried in order. Configure either, or both for
+redundancy — free allowances are small and run out:
+
+| Provider | Variable | Free key |
+| --- | --- | --- |
+| Google Gemini | `GEMINI_API_KEY` | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| OpenRouter | `OPENROUTER_API_KEY` | [openrouter.ai/keys](https://openrouter.ai/keys) |
+
+Extra keys rotate: `GEMINI_API_KEY_1..9`, `OPENROUTER_API_KEY_1..9`. A
+credential that is out of quota or rejected is skipped for every model behind
+it, and a stalled one is capped by `OCR_ATTEMPT_MS` so it cannot starve the
+providers after it. Get a free one from
 [Google AI Studio](https://aistudio.google.com/apikey):
 
 ```bash
@@ -156,6 +169,7 @@ GEMINI_API_KEY=your_key_here
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run verify:demo` | **18 rules-engine assertions** — presets, the 48-hour boundary, route and sport sensitivity, determinism |
 | `npm run verify:guards` | **16 quota-guard assertions** — rate limits, extraction cache, single-flight. No network required |
+| `npm run verify:vision` | **23 provider-chain assertions** — failure classification, ordering, OpenRouter reply parsing. No credentials required |
 
 There is also [`scripts/browser-check.mjs`](scripts/browser-check.mjs), which
 drives the app in Chromium and fails on any console error, exception, or React
@@ -199,6 +213,7 @@ lib/
   label-text.ts         Parses OCR text into candidate ingredients
   extraction-cache.ts   Image-hash cache + single-flight, to spare quota
   rate-limit.ts         Per-client and global caps on the AI scan path
+  vision.ts             AI fallback across Gemini and OpenRouter
   demo-presets.ts       The five stakeholder cases
   status-styles.ts      Tier colours and icons
   storage.ts            SSR-safe localStorage helpers
