@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, ShieldCheck } from "lucide-react";
 
 import AthleteProfileForm from "@/components/AthleteProfile";
@@ -44,6 +44,10 @@ export default function Home() {
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [manualOpen, setManualOpen] = useState(false);
+  // One scan at a time: a second request supersedes the first rather than
+  // racing it, so a double tap cannot spend two model calls or land a stale
+  // result over a newer one.
+  const inFlight = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setProfile(loadProfile());
@@ -55,6 +59,10 @@ export default function Home() {
 
   const runScan = useCallback(
     async (body: Record<string, unknown>) => {
+      inFlight.current?.abort();
+      const controller = new AbortController();
+      inFlight.current = controller;
+
       setIsScanning(true);
       setError(null);
       setIsSaved(false);
@@ -63,6 +71,7 @@ export default function Home() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...body, profile }),
+          signal: controller.signal,
         });
         if (!response.ok) {
           const detail = await response.json().catch(() => null);
@@ -70,13 +79,19 @@ export default function Home() {
         }
         setResult((await response.json()) as ScanResponse);
       } catch (cause) {
+        // A superseded request is not a failure the athlete should see.
+        if (cause instanceof DOMException && cause.name === "AbortError")
+          return;
         setError(
           cause instanceof Error
             ? cause.message
             : "The scan could not be completed.",
         );
       } finally {
-        setIsScanning(false);
+        if (inFlight.current === controller) {
+          inFlight.current = null;
+          setIsScanning(false);
+        }
       }
     },
     [profile],
@@ -129,7 +144,8 @@ export default function Home() {
           sport: profile.sport,
           discipline: profile.discipline,
           nextCompetitionDate: profile.nextCompetitionDate,
-          inCompetitionWindow: result.evaluation.competition.inCompetitionWindow,
+          inCompetitionWindow:
+            result.evaluation.competition.inCompetitionWindow,
         },
         ...(note ? { note } : {}),
       };
@@ -166,10 +182,7 @@ export default function Home() {
         {tab === "scanner" && (
           <div className="space-y-8">
             <div className="pt-2">
-              <ScannerModal
-                onCapture={handleCapture}
-                isScanning={isScanning}
-              />
+              <ScannerModal onCapture={handleCapture} isScanning={isScanning} />
             </div>
 
             <ManualEntry
@@ -193,9 +206,7 @@ export default function Home() {
                 onClick={() => setTab("profile")}
                 className="w-full rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-left text-xs text-amber-900 transition-colors hover:border-amber-400"
               >
-                <span className="font-semibold">
-                  No competition date set.
-                </span>{" "}
+                <span className="font-semibold">No competition date set.</span>{" "}
                 Results are assessed out-of-competition. Tap to add your event
                 date.
               </button>
@@ -237,10 +248,7 @@ export default function Home() {
               Your sport and competition date change how substances are
               assessed.
             </p>
-            <AthleteProfileForm
-              profile={profile}
-              onSave={handleProfileSave}
-            />
+            <AthleteProfileForm profile={profile} onSave={handleProfileSave} />
           </section>
         )}
       </main>

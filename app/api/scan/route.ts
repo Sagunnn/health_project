@@ -18,6 +18,21 @@ import { generateObject } from "ai";
 import { z } from "zod";
 
 import { getPresetById } from "@/lib/demo-presets";
+import {
+  cacheStats,
+  getCached,
+  imageKey,
+  setCached,
+  singleFlight,
+} from "@/lib/extraction-cache";
+import {
+  checkRateLimit,
+  clientKey,
+  recordCacheHit,
+  recordRejection,
+  recordScan,
+  usageSnapshot,
+} from "@/lib/rate-limit";
 import { evaluateLabel } from "@/lib/rules-engine";
 import { DEFAULT_PROFILE } from "@/lib/storage";
 import type {
@@ -265,89 +280,101 @@ async function extractWithGemini(imageBase64: string): Promise<VisionResult> {
 
   const { data, mimeType } = parseImage(imageBase64);
   const startedAt = Date.now();
+
   let lastError: unknown;
-  let sawQuota = false;
-  let sawNetwork = false;
-  let sawTimeout = false;
-  let sawAuth = false;
-  // The reason the *last* attempt failed is what the athlete should be told:
-  // a key we successfully rotated past is an operator concern, not theirs.
   let lastKind: FailureKind | undefined;
+  let sawQuota = false;
+  let sawAuth = false;
+
+  const remainingMs = () => OCR_BUDGET_MS - (Date.now() - startedAt);
+
+  /** One attempt against one key and model. Throws on failure. */
+  const attempt = async (
+    google: ReturnType<typeof createGoogleGenerativeAI>,
+    model: string,
+    budget: number,
+  ): Promise<VisionResult> => {
+    const result = await generateObject({
+      model: google(model),
+      schema: extractionSchema,
+      // No SDK-level retry: it sleeps and retries on 429s too, which turned
+      // an exhausted quota into a 45s wait. Socket faults get one immediate
+      // retry below instead.
+      maxRetries: 0,
+      abortSignal: AbortSignal.timeout(budget),
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: EXTRACTION_PROMPT },
+            { type: "image", image: data, mimeType },
+          ],
+        },
+      ],
+    });
+    return {
+      extracted: {
+        productName: result.object.productName,
+        ingredients: result.object.ingredients,
+      },
+      isSupplement: result.object.isSupplement,
+      model,
+    };
+  };
 
   // Keys outer, models inner: a key whose quota is gone is gone for every
   // model on that project, so exhausting its models first is the cheap way
   // to establish that before paying for a rotation.
   outer: for (let k = 0; k < keys.length; k++) {
     const google = createGoogleGenerativeAI({ apiKey: keys[k] });
-    let keyExhausted = false;
+    let keyUnusable = false;
 
     for (const model of MODEL_CHAIN) {
-      const remaining = OCR_BUDGET_MS - (Date.now() - startedAt);
-      // Leave enough headroom that an attempt can plausibly finish.
-      if (remaining < 5_000) {
-        sawTimeout = true;
-        lastKind = "timeout";
-        break outer;
-      }
-
-      try {
-        const result = await generateObject({
-          model: google(model),
-          schema: extractionSchema,
-          // One retry absorbs a transient socket failure; the chain handles
-          // everything slower-moving, and OCR_BUDGET_MS bounds the worst case.
-          maxRetries: 1,
-          abortSignal: AbortSignal.timeout(remaining),
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: EXTRACTION_PROMPT },
-                { type: "image", image: data, mimeType },
-              ],
-            },
-          ],
-        });
-
-        if (k > 0) {
-          console.warn(`[scan] succeeded on key #${k + 1} after rotation`);
+      // Up to two tries: the second only for a transient socket fault.
+      for (let tries = 0; tries < 2; tries++) {
+        const budget = remainingMs();
+        // Leave enough headroom that an attempt can plausibly finish.
+        if (budget < 5_000) {
+          lastKind = "timeout";
+          break outer;
         }
-        return {
-          extracted: {
-            productName: result.object.productName,
-            ingredients: result.object.ingredients,
-          },
-          isSupplement: result.object.isSupplement,
-          model,
-        };
-      } catch (cause) {
-        lastError = cause;
-        const kind = classify(cause);
-        lastKind = kind;
-        if (kind === "quota") {
-          sawQuota = true;
-          keyExhausted = true;
-        }
-        if (kind === "auth") sawAuth = true;
-        if (kind === "network") sawNetwork = true;
-        if (kind === "timeout") sawTimeout = true;
-        // Key material never reaches the log — only its position in rotation.
-        console.error(
-          `[scan] key #${k + 1}, model ${model} failed (${kind}):`,
-          cause,
-        );
-        if (kind === "other") throw new ExtractionFailure("other", cause);
-        if (kind === "auth") {
-          // The key itself is bad, so every model on it fails identically.
-          keyExhausted = true;
+
+        try {
+          const vision = await attempt(google, model, budget);
+          if (k > 0) {
+            console.warn(`[scan] succeeded on key #${k + 1} after rotation`);
+          }
+          return vision;
+        } catch (cause) {
+          lastError = cause;
+          const kind = classify(cause);
+          lastKind = kind;
+          if (kind === "quota") {
+            sawQuota = true;
+            keyUnusable = true;
+          }
+          if (kind === "auth") {
+            sawAuth = true;
+            keyUnusable = true;
+          }
+          // Key material never reaches the log — only its rotation position.
+          console.error(
+            `[scan] key #${k + 1}, model ${model} failed (${kind}):`,
+            cause,
+          );
+
+          if (kind === "other") throw new ExtractionFailure("other", cause);
+          // A bad key fails identically on every model; stop wasting attempts.
+          if (kind === "auth" || kind === "quota") break;
+          // Retry the same model once, but only for a socket fault.
+          if (kind === "network" && tries === 0) continue;
           break;
         }
-        // Quota is per-model and network faults are transient, so the next
-        // model in the chain may still succeed.
       }
+      if (keyUnusable) break;
     }
 
-    if (keyExhausted && k < keys.length - 1) {
+    if (keyUnusable && k < keys.length - 1) {
       console.warn(
         `[scan] key #${k + 1} unusable (${sawAuth ? "rejected" : "quota"}), rotating to #${k + 2}`,
       );
@@ -393,6 +420,8 @@ export async function GET() {
       commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
       region: process.env.VERCEL_REGION ?? null,
     },
+    usage: usageSnapshot(),
+    cache: cacheStats(),
     rulesVersion: evaluateLabel(
       { productName: "", ingredients: [] },
       DEFAULT_PROFILE,
@@ -402,6 +431,12 @@ export async function GET() {
       ? "Key present. Label OCR should work."
       : "No key on this deployment. Add GEMINI_API_KEY in Vercel, then REDEPLOY — existing deployments keep their original env snapshot.",
   });
+}
+
+function retryMessage(seconds: number): string {
+  if (seconds < 90) return `about ${Math.max(1, Math.round(seconds))} seconds`;
+  if (seconds < 5400) return `about ${Math.round(seconds / 60)} minutes`;
+  return `about ${Math.round(seconds / 3600)} hours`;
 }
 
 export async function POST(request: Request) {
@@ -445,14 +480,59 @@ export async function POST(request: Request) {
     Object.assign(scanContext, preset.context ?? {});
   } else if (imageBase64) {
     /* ---------- Scenario B: real image via Gemini ---------- */
-    if (!apiKey()) {
+    const key = imageKey(imageBase64);
+    const cached = getCached(key);
+
+    if (cached) {
+      // Served without touching the model, so it costs no quota and is not
+      // metered against the caller's allowance.
+      recordCacheHit();
+      label = cached.extracted;
+      extractionSource = "vision-llm";
+      if (cached.isSupplement) scanContext.isDietarySupplement = true;
+    } else if (!apiKey()) {
       label = { productName: "Unrecognised product", ingredients: [] };
       extractionSource = "vision-llm";
       warning =
         "GEMINI_API_KEY is not configured, so label OCR is unavailable. Enter the ingredients manually or use a demo preset.";
     } else {
+      // Metered only when a model call is actually going to happen.
+      const caller = clientKey(request);
+      const limit = checkRateLimit(caller);
+      if (!limit.allowed) {
+        recordRejection();
+        const wait = retryMessage(limit.retryAfterSeconds ?? 60);
+        return NextResponse.json(
+          {
+            error:
+              limit.reason === "global-day"
+                ? `Label scanning has reached its shared daily limit. Try again in ${wait}, or enter the ingredients manually.`
+                : `You have reached the scanning limit. Try again in ${wait}, or enter the ingredients manually.`,
+            retryAfterSeconds: limit.retryAfterSeconds,
+          },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(limit.retryAfterSeconds ?? 60),
+            },
+          },
+        );
+      }
+
+      // Reserve the slot BEFORE calling out. A failed call still spends
+      // Gemini quota, so metering only successes would let a caller hammer
+      // the endpoint for free by forcing failures.
+      let reserved = false;
       try {
-        const vision = await extractWithGemini(imageBase64);
+        const { result: vision, deduped } = await singleFlight(key, () => {
+          recordScan(caller);
+          reserved = true;
+          return extractWithGemini(imageBase64);
+        });
+        // A deduped caller rode along on an in-flight request, so it did not
+        // spend a model call of its own.
+        void deduped;
+        setCached(key, vision);
         label = vision.extracted;
         extractionSource = "vision-llm";
         // The model's supplement call may only ADD risk. The engine's own
@@ -464,6 +544,7 @@ export async function POST(request: Request) {
             "No ingredients could be read from that image. Try better lighting, or enter them manually.";
         }
       } catch (cause) {
+        void reserved;
         console.error("[scan] label OCR failed:", cause);
         label = { productName: "Unrecognised product", ingredients: [] };
         extractionSource = "vision-llm";

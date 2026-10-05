@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "verify:demo": "tsx scripts/verify-demo.ts"
+    "verify:demo": "tsx scripts/verify-demo.ts",
+    "verify:guards": "tsx scripts/verify-guards.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",

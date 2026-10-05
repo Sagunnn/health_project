@@ -33,3 +33,6 @@ venv
 
 # vercel
 .vercel
+
+*.pptx
+
