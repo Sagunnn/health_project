@@ -73,8 +73,23 @@ The central design rule: **the AI never decides anything.**
 The label is read **on your phone first**, and what it read is shown to you to
 confirm or correct before anything is judged. That keeps the common case free,
 offline and private — the image never leaves the device — and it puts a human
-between imperfect OCR and a safety-critical verdict. A photo only goes to
-Gemini if you ask for it.
+between imperfect OCR and a safety-critical verdict.
+
+**The AI scan is reached for only when the on-device read is weak.** A proper
+ingredients panel or an inline list of two or more substances is trustworthy
+evidence, so it is used as-is: free, instant, nothing uploaded. But when the
+molecule could only be inferred from a brand's brackets (`LAMADOL (Tramadol
+HCl)`) or from the title line of a generic pack (`Frusemide Tablets I.P. 40
+mg`), no ingredients panel was found at all — which is exactly where an
+ingredient gets missed, and a missed ingredient reads as a clean product. Those
+escalate automatically, and you can always ask for an AI scan yourself.
+
+| Label | On-device read | Escalates? |
+| --- | --- | --- |
+| Ingredients panel, or inline list of 2+ | trusted | no |
+| Molecule only in brackets | weak | yes |
+| Molecule only in the title | weak | yes |
+| Nothing readable | weak | yes |
 
 - The vision model is an **OCR engine only**. It is never asked whether something
   is permitted, what WADA class it falls under, or what the athlete should do.

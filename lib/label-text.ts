@@ -74,6 +74,59 @@ function splitFragments(line: string): string[] {
 export type IngredientSource =
   "ingredient-block" | "inline-list" | "parentheses" | "product-name" | "none";
 
+export interface ReadQuality {
+  /** True when the local read is trustworthy enough to act on as-is. */
+  strong: boolean;
+  /** Short reason, shown to the athlete when we escalate. */
+  reason: string;
+}
+
+/**
+ * Decides whether an on-device read is good enough, or whether the label
+ * should be escalated to a vision model.
+ *
+ * Structure matters more than Tesseract's confidence score. A proper
+ * ingredients panel or an inline comma list naming two or more substances is
+ * strong evidence even at mediocre confidence — those are printed in flat,
+ * high-contrast type. A molecule inferred from a brand's brackets or from the
+ * title line means no panel was found at all, which is exactly when an
+ * ingredient is most likely to have been missed, and a missed ingredient on
+ * this app is a false clearance.
+ */
+export function assessRead(
+  parsed: Pick<ParsedLabel, "derivedFrom" | "ingredients">,
+  confidence: number,
+): ReadQuality {
+  const count = parsed.ingredients.length;
+  if (count === 0) {
+    return { strong: false, reason: "nothing readable was found on the label" };
+  }
+
+  const structured =
+    parsed.derivedFrom === "ingredient-block" ||
+    parsed.derivedFrom === "inline-list";
+
+  if (structured && count >= 2) {
+    return { strong: true, reason: "an ingredients list was found" };
+  }
+  if (structured && confidence >= 70) {
+    return { strong: true, reason: "an ingredients list was found" };
+  }
+  if (parsed.derivedFrom === "parentheses") {
+    return {
+      strong: false,
+      reason: "the substance was only found in brackets after the brand name",
+    };
+  }
+  if (parsed.derivedFrom === "product-name") {
+    return {
+      strong: false,
+      reason: "no ingredients panel was found, only the product title",
+    };
+  }
+  return { strong: false, reason: "the label was hard to read" };
+}
+
 export interface ParsedLabel {
   productName: string;
   ingredients: string[];

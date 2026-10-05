@@ -2,7 +2,7 @@
  * Parser checks against verbatim Tesseract output from real packaging.
  * Each case is a label that previously parsed wrongly.
  */
-import { parseLabelText } from "../lib/label-text";
+import { assessRead, parseLabelText } from "../lib/label-text";
 import { evaluateLabel } from "../lib/rules-engine";
 import { DEFAULT_PROFILE } from "../lib/storage";
 import type { SafetyStatus } from "../types";
@@ -56,6 +56,17 @@ for (const [label, text, expected] of CASES) {
   console.log(`   derivedFrom : ${parsed.derivedFrom}`);
   console.log(`   ingredients : ${JSON.stringify(parsed.ingredients)}`);
   console.log(`   status      : ${r.status}${ok ? "" : `  (expected ${expected})`}`);
+}
+
+console.log("\n--- escalation policy (which reads get sent to a model) ---");
+for (const [label, text] of CASES.map((c) => [c[0], c[1]] as const)) {
+  const parsed = parseLabelText(text);
+  // Confidence from the real Tesseract runs on these images.
+  const conf = label.startsWith("Frusemide") ? 55 : label.startsWith("Lamadol") ? 44 : 77;
+  const q = assessRead(parsed, conf);
+  console.log(
+    `   ${(q.strong ? "keep local " : "ESCALATE   ").padEnd(12)} ${label.padEnd(42)} ${parsed.derivedFrom} (${q.reason})`,
+  );
 }
 
 console.log(

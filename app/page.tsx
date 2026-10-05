@@ -7,6 +7,7 @@ import AthleteProfileForm from "@/components/AthleteProfile";
 import BottomNav, { type TabId } from "@/components/BottomNav";
 import DemoPresets from "@/components/DemoPresets";
 import ManualEntry from "@/components/ManualEntry";
+import { assessRead } from "@/lib/label-text";
 import { readLabelLocally, type LocalOcrResult } from "@/lib/local-ocr";
 import PassportTimeline from "@/components/PassportTimeline";
 import ResultCard from "@/components/ResultCard";
@@ -55,11 +56,20 @@ export default function Home() {
     (LocalOcrResult & { dataUrl: string }) | null
   >(null);
   const [ocrProgress, setOcrProgress] = useState<number | null>(null);
+  /** Why we are reaching for the model, shown while that happens. */
+  const [escalating, setEscalating] = useState<string | null>(null);
+  /** Whether any vision provider is configured, so we never escalate in vain. */
+  const [aiAvailable, setAiAvailable] = useState(false);
 
   useEffect(() => {
     setProfile(loadProfile());
     setPassport(loadPassport());
     setMounted(true);
+    // Cheap, no model call: tells us whether escalation is even possible.
+    fetch("/api/scan")
+      .then((r) => r.json())
+      .then((health: { ok?: boolean }) => setAiAvailable(Boolean(health.ok)))
+      .catch(() => setAiAvailable(false));
   }, []);
 
   const counts = useMemo(() => countByStatus(passport), [passport]);
@@ -84,7 +94,9 @@ export default function Home() {
           const detail = await response.json().catch(() => null);
           throw new Error(detail?.error ?? "The scan could not be completed.");
         }
-        setResult((await response.json()) as ScanResponse);
+        const payload = (await response.json()) as ScanResponse;
+        setResult(payload);
+        return payload;
       } catch (cause) {
         // A superseded request is not a failure the athlete should see.
         if (cause instanceof DOMException && cause.name === "AbortError")
@@ -94,6 +106,7 @@ export default function Home() {
             ? cause.message
             : "The scan could not be completed.",
         );
+        return null;
       } finally {
         if (inFlight.current === controller) {
           inFlight.current = null;
@@ -149,6 +162,24 @@ export default function Home() {
       setOcrProgress(0);
       try {
         const ocr = await readLabelLocally(dataUrl, setOcrProgress);
+        setOcrProgress(null);
+        const quality = assessRead(ocr, ocr.confidence);
+
+        // A weak read is exactly where an ingredient gets missed, and a
+        // missed ingredient reads as a clean product. Spend a model call
+        // there, and nowhere else — a clean ingredients panel is already
+        // trustworthy, free and instant.
+        if (!quality.strong && aiAvailable) {
+          setEscalating(quality.reason);
+          const payload = await runScan({ imageBase64: dataUrl });
+          setEscalating(null);
+          if (payload && payload.extracted.ingredients.length > 0) return;
+          // The model could not help either — hand back the local read so
+          // the athlete can still correct it by hand.
+          setError(null);
+          setResult(null);
+        }
+
         setReview({ ...ocr, dataUrl });
         setManualOpen(false);
       } catch {
@@ -156,9 +187,10 @@ export default function Home() {
         scanWithAi(dataUrl);
       } finally {
         setOcrProgress(null);
+        setEscalating(null);
       }
     },
-    [scanWithAi],
+    [aiAvailable, runScan, scanWithAi],
   );
 
   const handleSave = useCallback(
@@ -221,7 +253,20 @@ export default function Home() {
               />
             </div>
 
-            {ocrProgress !== null && (
+            {escalating !== null && (
+              <p className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-900">
+                <Loader2
+                  className="mt-0.5 h-4 w-4 shrink-0 animate-spin"
+                  aria-hidden
+                />
+                <span>
+                  Your device read it, but {escalating}. Checking with the AI
+                  scanner for a cleaner read…
+                </span>
+              </p>
+            )}
+
+            {ocrProgress !== null && escalating === null && (
               <p className="flex items-center justify-center gap-2 text-sm font-medium text-slate-600">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 Reading the label on your device…{" "}
