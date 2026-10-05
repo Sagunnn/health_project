@@ -207,6 +207,43 @@ async function extractWithGemini(
  * Handler
  * ------------------------------------------------------------------ */
 
+/**
+ * GET /api/scan — configuration health check.
+ *
+ * Exists because a missing key looks identical to a failed scan from the
+ * outside, and the usual cause is a Vercel env var that was added but never
+ * redeployed. Reports only booleans, names, and lengths — never the key.
+ */
+export async function GET() {
+  const key = apiKey();
+  return NextResponse.json({
+    ok: Boolean(key),
+    keyConfigured: Boolean(key),
+    keySource: process.env.GEMINI_API_KEY
+      ? "GEMINI_API_KEY"
+      : process.env.GOOGLE_GENERATIVE_AI_API_KEY
+        ? "GOOGLE_GENERATIVE_AI_API_KEY"
+        : null,
+    // Length only — catches a truncated paste or stray quotes without
+    // revealing any part of the secret.
+    keyLength: key ? key.length : 0,
+    modelChain: MODEL_CHAIN,
+    deployment: {
+      vercelEnv: process.env.VERCEL_ENV ?? null,
+      commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+      region: process.env.VERCEL_REGION ?? null,
+    },
+    rulesVersion: evaluateLabel(
+      { productName: "", ingredients: [] },
+      DEFAULT_PROFILE,
+      {},
+    ).rulesVersion,
+    hint: key
+      ? "Key present. Label OCR should work."
+      : "No key on this deployment. Add GEMINI_API_KEY in Vercel, then REDEPLOY — existing deployments keep their original env snapshot.",
+  });
+}
+
 export async function POST(request: Request) {
   let body: unknown;
   try {
