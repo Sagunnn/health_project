@@ -1,6 +1,6 @@
 {
-  "version": "2025.1",
-  "listEdition": "WADA Prohibited List 2025 (effective 1 January 2025)",
+  "version": "2026.1",
+  "listEdition": "WADA Prohibited List 2026 (effective 1 January 2026)",
   "lastReviewed": "2026-10-05",
   "source": "https://www.wada-ama.org/en/prohibited-list",
   "disclaimer": "Curated educational reference for the BESAFE by AIMS MVP. It is not a substitute for a determination by the athlete's National Anti-Doping Organisation (NADO), an International Federation, or the Global DRO. Always confirm before use.",
@@ -197,7 +197,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Exogenous anabolic androgenic steroid. Prohibited in and out of competition, in all sports, by any route of administration.",
-      "reference": "WADA 2025 Prohibited List, S1.1a"
+      "reference": "WADA 2026 Prohibited List, S1.1a"
     },
     {
       "id": "s1-nandrolone",
@@ -216,7 +216,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Exogenous anabolic androgenic steroid with a long detection window. Prohibited at all times.",
-      "reference": "WADA 2025 Prohibited List, S1.1a"
+      "reference": "WADA 2026 Prohibited List, S1.1a"
     },
     {
       "id": "s1-testosterone",
@@ -237,7 +237,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Endogenous anabolic androgenic steroid. Exogenous administration by any route, including transdermal gel, is prohibited at all times.",
-      "reference": "WADA 2025 Prohibited List, S1.1b"
+      "reference": "WADA 2026 Prohibited List, S1.1b"
     },
     {
       "id": "s1-dhea",
@@ -257,7 +257,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Prohormone and prohibited anabolic agent that is still sold over the counter in several markets. Legal retail availability does not make it permitted in sport.",
-      "reference": "WADA 2025 Prohibited List, S1.1b"
+      "reference": "WADA 2026 Prohibited List, S1.1b"
     },
     {
       "id": "s1-ostarine",
@@ -276,7 +276,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Selective androgen receptor modulator (SARM). Not approved for human therapeutic use in any jurisdiction and prohibited at all times. A frequent undeclared contaminant of 'research' supplements.",
-      "reference": "WADA 2025 Prohibited List, S1.2"
+      "reference": "WADA 2026 Prohibited List, S1.2"
     },
     {
       "id": "s1-ligandrol",
@@ -294,7 +294,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Selective androgen receptor modulator (SARM). Prohibited at all times and commonly mislabelled in supplement products.",
-      "reference": "WADA 2025 Prohibited List, S1.2"
+      "reference": "WADA 2026 Prohibited List, S1.2"
     },
     {
       "id": "s1-rad140",
@@ -311,7 +311,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Selective androgen receptor modulator (SARM). Prohibited at all times.",
-      "reference": "WADA 2025 Prohibited List, S1.2"
+      "reference": "WADA 2026 Prohibited List, S1.2"
     },
     {
       "id": "s1-clenbuterol",
@@ -328,7 +328,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Beta-2 agonist classified as an anabolic agent. Prohibited at all times with no dose threshold, and a known contaminant of meat in some regions.",
-      "reference": "WADA 2025 Prohibited List, S1.2"
+      "reference": "WADA 2026 Prohibited List, S1.2"
     },
     {
       "id": "s2-epo",
@@ -351,7 +351,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Erythropoietin receptor agonist. Prohibited at all times in all sports.",
-      "reference": "WADA 2025 Prohibited List, S2.1"
+      "reference": "WADA 2026 Prohibited List, S2.1"
     },
     {
       "id": "s2-hgh",
@@ -379,7 +379,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Growth hormone, its fragments, releasing factors, and secretagogues are prohibited at all times. Peptides sold as 'research chemicals' fall under this class.",
-      "reference": "WADA 2025 Prohibited List, S2.2 and S2.3"
+      "reference": "WADA 2026 Prohibited List, S2.2 and S2.3"
     },
     {
       "id": "s3-salbutamol",
@@ -413,7 +413,7 @@
       },
       "tueRequired": false,
       "rationale": "Beta-2 agonists are prohibited at all times, but inhaled salbutamol is permitted below a defined therapeutic ceiling. Exceeding the inhaled limit, or using any oral or injected form, makes it prohibited.",
-      "reference": "WADA 2025 Prohibited List, S3"
+      "reference": "WADA 2026 Prohibited List, S3"
     },
     {
       "id": "s3-formoterol",
@@ -445,7 +445,7 @@
       },
       "tueRequired": false,
       "rationale": "Permitted by inhalation below the stated therapeutic ceiling; prohibited above it or by any other route.",
-      "reference": "WADA 2025 Prohibited List, S3"
+      "reference": "WADA 2026 Prohibited List, S3"
     },
     {
       "id": "s3-higenamine",
@@ -466,7 +466,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "A beta-2 agonist of plant origin, prohibited at all times with no dose threshold. It appears in many pre-workout and 'fat burner' products, sometimes only as a botanical name such as Nandina domestica or Aconite.",
-      "reference": "WADA 2025 Prohibited List, S3"
+      "reference": "WADA 2026 Prohibited List, S3"
     },
     {
       "id": "s4-clomiphene",
@@ -484,7 +484,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Selective oestrogen receptor modulator used to restart endogenous testosterone production. Prohibited at all times.",
-      "reference": "WADA 2025 Prohibited List, S4.2"
+      "reference": "WADA 2026 Prohibited List, S4.2"
     },
     {
       "id": "s4-tamoxifen",
@@ -501,7 +501,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Selective oestrogen receptor modulator. Prohibited at all times, including when used in post-cycle therapy.",
-      "reference": "WADA 2025 Prohibited List, S4.2"
+      "reference": "WADA 2026 Prohibited List, S4.2"
     },
     {
       "id": "s4-arimistane",
@@ -521,7 +521,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Aromatase inhibitor, prohibited at all times. Frequently marketed as a legal 'testosterone support' or post-cycle supplement ingredient.",
-      "reference": "WADA 2025 Prohibited List, S4.1"
+      "reference": "WADA 2026 Prohibited List, S4.1"
     },
     {
       "id": "s4-gw1516",
@@ -543,7 +543,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "PPARδ agonist and metabolic modulator. Prohibited at all times. WADA has issued a specific health warning about serious toxicity; it is not approved for human use anywhere.",
-      "reference": "WADA 2025 Prohibited List, S4.4"
+      "reference": "WADA 2026 Prohibited List, S4.4"
     },
     {
       "id": "s4-insulin",
@@ -565,7 +565,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Insulins are prohibited at all times. Athletes with diabetes require an approved Therapeutic Use Exemption.",
-      "reference": "WADA 2025 Prohibited List, S4.5"
+      "reference": "WADA 2026 Prohibited List, S4.5"
     },
     {
       "id": "s4-meldonium",
@@ -582,7 +582,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Metabolic modulator prohibited at all times since 2016. Available over the counter in parts of Eastern Europe, which does not make it permitted.",
-      "reference": "WADA 2025 Prohibited List, S4.4"
+      "reference": "WADA 2026 Prohibited List, S4.4"
     },
     {
       "id": "s5-furosemide",
@@ -601,7 +601,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Loop diuretic. Prohibited at all times because it can mask other substances and manipulate weight. Even a TUE for a diuretic does not cover a concurrent threshold substance finding.",
-      "reference": "WADA 2025 Prohibited List, S5"
+      "reference": "WADA 2026 Prohibited List, S5"
     },
     {
       "id": "s5-hydrochlorothiazide",
@@ -623,7 +623,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Thiazide and potassium-sparing diuretics are prohibited at all times. They are common components of combination blood-pressure medicines, so the full formulation must be checked.",
-      "reference": "WADA 2025 Prohibited List, S5"
+      "reference": "WADA 2026 Prohibited List, S5"
     },
     {
       "id": "s5-probenecid",
@@ -642,7 +642,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Masking agent prohibited at all times.",
-      "reference": "WADA 2025 Prohibited List, S5"
+      "reference": "WADA 2026 Prohibited List, S5"
     },
     {
       "id": "s6-pseudoephedrine",
@@ -669,7 +669,7 @@
       "washoutHours": 24,
       "tueRequired": false,
       "rationale": "Specified stimulant prohibited in-competition above a urinary threshold. Permitted out-of-competition. Widely sold in over-the-counter decongestants, so the in-competition timing is what matters.",
-      "reference": "WADA 2025 Prohibited List, S6.b"
+      "reference": "WADA 2026 Prohibited List, S6.b"
     },
     {
       "id": "s6-ephedrine",
@@ -697,7 +697,7 @@
       "washoutHours": 24,
       "tueRequired": false,
       "rationale": "Specified stimulant prohibited in-competition above a urinary threshold. Botanical sources such as Ma Huang or Ephedra sinica count as ephedrine.",
-      "reference": "WADA 2025 Prohibited List, S6.b"
+      "reference": "WADA 2026 Prohibited List, S6.b"
     },
     {
       "id": "s6-dmaa",
@@ -723,7 +723,7 @@
       "washoutHours": 72,
       "tueRequired": false,
       "rationale": "Specified stimulant prohibited in-competition with no dose threshold. One of the most common causes of supplement-related anti-doping violations, and often hidden behind botanical names such as 'geranium extract'.",
-      "reference": "WADA 2025 Prohibited List, S6.b"
+      "reference": "WADA 2026 Prohibited List, S6.b"
     },
     {
       "id": "s6-dmha",
@@ -749,7 +749,7 @@
       "washoutHours": 72,
       "tueRequired": false,
       "rationale": "Specified stimulant prohibited in-competition. Marketed under many synonyms and botanical covers, including Juglans regia (walnut bark) extract.",
-      "reference": "WADA 2025 Prohibited List, S6.b"
+      "reference": "WADA 2026 Prohibited List, S6.b"
     },
     {
       "id": "s6-modafinil",
@@ -769,7 +769,7 @@
       "washoutHours": 72,
       "tueRequired": true,
       "rationale": "Non-specified stimulant prohibited in-competition. A non-specified substance attracts the full sanction range, so an approved TUE must be in place before competition.",
-      "reference": "WADA 2025 Prohibited List, S6.a"
+      "reference": "WADA 2026 Prohibited List, S6.a"
     },
     {
       "id": "s6-methylphenidate",
@@ -792,7 +792,7 @@
       "inCompetitionStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Non-specified stimulant prohibited in-competition. Athletes treated for ADHD need an approved TUE before competing. Note that atomoxetine is not prohibited and may be an alternative to discuss with a physician.",
-      "reference": "WADA 2025 Prohibited List, S6.a"
+      "reference": "WADA 2026 Prohibited List, S6.a"
     },
     {
       "id": "s6-amphetamine",
@@ -818,7 +818,7 @@
       "washoutHours": 96,
       "tueRequired": true,
       "rationale": "Non-specified stimulant prohibited in-competition. Several entries in this group are also substances of abuse under Article 4.2.3, which changes how a sanction is assessed.",
-      "reference": "WADA 2025 Prohibited List, S6.a"
+      "reference": "WADA 2026 Prohibited List, S6.a"
     },
     {
       "id": "s7-morphine",
@@ -844,7 +844,7 @@
       "inCompetitionStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Narcotic prohibited in-competition. Codeine and dihydrocodeine are not prohibited, but codeine metabolises to morphine, so high doses close to competition warrant caution.",
-      "reference": "WADA 2025 Prohibited List, S7"
+      "reference": "WADA 2026 Prohibited List, S7"
     },
     {
       "id": "s7-tramadol",
@@ -865,7 +865,7 @@
       "washoutHours": 24,
       "tueRequired": true,
       "rationale": "Prohibited in-competition since 1 January 2024. Previously only on the Monitoring Program, so older guidance and older packaging advice are now out of date.",
-      "reference": "WADA 2025 Prohibited List, S7"
+      "reference": "WADA 2026 Prohibited List, S7"
     },
     {
       "id": "s8-thc",
@@ -901,7 +901,7 @@
       "washoutHours": 504,
       "tueRequired": false,
       "rationale": "All natural and synthetic cannabinoids are prohibited in-competition, except cannabidiol. Full-spectrum CBD products routinely contain enough THC to cause an adverse finding.",
-      "reference": "WADA 2025 Prohibited List, S8"
+      "reference": "WADA 2026 Prohibited List, S8"
     },
     {
       "id": "s9-prednisolone",
@@ -942,7 +942,7 @@
       "washoutHours": 72,
       "tueRequired": true,
       "rationale": "All glucocorticoids are prohibited in-competition when given by any injectable, oral, or rectal route. Inhaled, intranasal, topical, ophthalmic, and otic use is not prohibited. Route is therefore decisive.",
-      "reference": "WADA 2025 Prohibited List, S9"
+      "reference": "WADA 2026 Prohibited List, S9"
     },
     {
       "id": "s9-triamcinolone",
@@ -973,7 +973,7 @@
       "washoutHours": 1440,
       "tueRequired": true,
       "rationale": "Injected triamcinolone acetonide has the longest washout of any glucocorticoid: 60 days for intramuscular administration. An injection months before an event can still produce an in-competition positive.",
-      "reference": "WADA 2025 Prohibited List, S9; WADA Glucocorticoid Washout Periods"
+      "reference": "WADA 2026 Prohibited List, S9; WADA Glucocorticoid Washout Periods"
     },
     {
       "id": "p1-beta-blockers",
@@ -1020,7 +1020,7 @@
       ],
       "tueRequired": true,
       "rationale": "Beta-blockers are prohibited in-competition only in the listed sports, and additionally out-of-competition in archery and shooting. In every other sport they are not prohibited. Includes ophthalmic timolol for glaucoma, which is systemically absorbed.",
-      "reference": "WADA 2025 Prohibited List, P1"
+      "reference": "WADA 2026 Prohibited List, P1"
     },
     {
       "id": "m1-blood-doping",
@@ -1043,7 +1043,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Prohibited method at all times. Supplemental oxygen by inhalation is not prohibited.",
-      "reference": "WADA 2025 Prohibited List, M1"
+      "reference": "WADA 2026 Prohibited List, M1"
     },
     {
       "id": "m2-tampering",
@@ -1063,7 +1063,7 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Prohibited method at all times. Intravenous infusions of more than 100 mL per 12 hours are prohibited unless legitimately received in a hospital, during a surgical procedure, or in a clinical diagnostic investigation.",
-      "reference": "WADA 2025 Prohibited List, M2"
+      "reference": "WADA 2026 Prohibited List, M2"
     },
     {
       "id": "mon-caffeine",
@@ -1113,7 +1113,70 @@
       "baseStatus": "PROHIBITED",
       "tueRequired": true,
       "rationale": "Any pharmacological substance with no current approval by a government regulatory health authority for human therapeutic use is prohibited at all times. Labelling a product 'research use only' or 'not for human consumption' places it squarely in S0.",
-      "reference": "WADA 2025 Prohibited List, S0"
+      "reference": "WADA 2026 Prohibited List, S0"
+    },
+    {
+      "id": "s3-salmeterol",
+      "substance": "Salmeterol",
+      "aliases": [
+        "salmeterol",
+        "serevent",
+        "seretide",
+        "advair"
+      ],
+      "wadaClass": "S3",
+      "classLabel": "S3 — Beta-2 Agonists",
+      "scope": "AT_ALL_TIMES",
+      "baseStatus": "CONDITIONAL",
+      "inCompetitionStatus": "CONDITIONAL",
+      "permittedRoutes": [
+        "INHALED"
+      ],
+      "prohibitedRoutes": [
+        "ORAL",
+        "INJECTION"
+      ],
+      "doseThreshold": {
+        "amount": 200,
+        "unit": "µg",
+        "period": "PER_24H",
+        "note": "Inhaled salmeterol is permitted up to a maximum of 200 µg per 24 hours. Any other route, or a higher dose, is prohibited."
+      },
+      "tueRequired": false,
+      "rationale": "Beta-2 agonists are prohibited at all times, but inhaled salmeterol is permitted below a defined therapeutic ceiling. Commonly prescribed as a combination asthma inhaler.",
+      "reference": "WADA 2026 Prohibited List, S3"
+    },
+    {
+      "id": "s3-vilanterol",
+      "substance": "Vilanterol",
+      "aliases": [
+        "vilanterol",
+        "relvar",
+        "breo",
+        "trelegy",
+        "anoro"
+      ],
+      "wadaClass": "S3",
+      "classLabel": "S3 — Beta-2 Agonists",
+      "scope": "AT_ALL_TIMES",
+      "baseStatus": "CONDITIONAL",
+      "inCompetitionStatus": "CONDITIONAL",
+      "permittedRoutes": [
+        "INHALED"
+      ],
+      "prohibitedRoutes": [
+        "ORAL",
+        "INJECTION"
+      ],
+      "doseThreshold": {
+        "amount": 25,
+        "unit": "µg",
+        "period": "PER_24H",
+        "note": "Inhaled vilanterol is permitted up to a maximum of 25 µg per 24 hours. Any other route, or a higher dose, is prohibited."
+      },
+      "tueRequired": false,
+      "rationale": "Beta-2 agonists are prohibited at all times, but inhaled vilanterol is permitted below a defined therapeutic ceiling.",
+      "reference": "WADA 2026 Prohibited List, S3"
     }
   ],
   "supplementRiskIndicators": {

@@ -21,6 +21,7 @@ import type {
 } from "@/types";
 import { STATUS_TIERS } from "@/types";
 import {
+  LISTED,
   containsTerm,
   normalizeTerm as normalize,
   stripDose,
@@ -43,6 +44,40 @@ interface RuleMatch {
 }
 
 /**
+ * Every substance named in the official List, as rules carrying class-level
+ * status.
+ *
+ * The hand-curated entries in `wada-rules.json` stay authoritative because
+ * they encode what the class alone cannot — inhaled salbutamol's dose ceiling,
+ * which glucocorticoid routes are permitted, washout periods. These fill in
+ * everything else, so a substance that is plainly on the List is no longer
+ * reported as UNVERIFIED merely because nobody had curated it yet.
+ */
+const LISTED_RULES: WadaSubstanceRule[] = Object.entries(
+  LISTED.classes,
+).flatMap(([cls, group]) =>
+  group.substances.map((name) => ({
+    id: `wada2026-${cls}-${normalize(name).replace(/\s+/g, "-")}`,
+    substance: name,
+    aliases: [name.toLowerCase()],
+    wadaClass: cls as WadaSubstanceRule["wadaClass"],
+    classLabel: `${cls} — ${group.title}`,
+    scope: group.scope as WadaSubstanceRule["scope"],
+    baseStatus: group.baseStatus as WadaSubstanceRule["baseStatus"],
+    ...(group.inCompetitionStatus
+      ? {
+          inCompetitionStatus:
+            group.inCompetitionStatus as WadaSubstanceRule["baseStatus"],
+        }
+      : {}),
+    ...(cls === "P1" ? { sports: LISTED.sports } : {}),
+    tueRequired: group.tueRequired,
+    rationale: group.rationale,
+    reference: group.reference,
+  })),
+);
+
+/**
  * Find the substance rule for one ingredient.
  *
  * Longest alias wins: "methylprednisolone" must not be captured by a shorter
@@ -53,19 +88,23 @@ function matchSubstance(ingredient: string): RuleMatch | null {
   const haystack = stripDose(normalize(ingredient));
   if (!haystack) return null;
 
-  let best: RuleMatch | null = null;
-
-  for (const rule of DB.substances) {
-    for (const alias of rule.aliases) {
-      const needle = normalize(alias);
-      if (!containsTerm(haystack, needle)) continue;
-      if (!best || needle.length > normalize(best.alias).length) {
-        best = { rule, alias };
+  const search = (rules: WadaSubstanceRule[]): RuleMatch | null => {
+    let best: RuleMatch | null = null;
+    for (const rule of rules) {
+      for (const alias of rule.aliases) {
+        const needle = normalize(alias);
+        if (!containsTerm(haystack, needle)) continue;
+        if (!best || needle.length > normalize(best.alias).length) {
+          best = { rule, alias };
+        }
       }
     }
-  }
+    return best;
+  };
 
-  return best;
+  // Curated rules win: they carry route, dose and washout detail that a
+  // class-level entry cannot express.
+  return search(DB.substances) ?? search(LISTED_RULES);
 }
 
 /** True when the ingredient is on the explicit permitted allow-list. */
@@ -217,6 +256,27 @@ function evaluateMatchedIngredient(
       reasons.push(
         `The ${route?.toLowerCase()} route is explicitly prohibited for this substance.`,
       );
+      // A prohibited route removes the exception, but the class still decides
+      // WHEN the substance is banned. Oral salbutamol (S3, at all times) is
+      // prohibited outright; oral prednisolone (S9, in-competition) is only
+      // prohibited inside the competition window, so it falls through to the
+      // timing logic below.
+      if (rule.scope === "AT_ALL_TIMES") {
+        return {
+          ingredient,
+          status: "PROHIBITED",
+          matchedSubstance: rule.substance,
+          ruleId: rule.id,
+          wadaClass: rule.wadaClass,
+          classLabel: rule.classLabel,
+          scope: rule.scope,
+          reasons,
+          tueRequired: rule.tueRequired,
+          washoutHours: rule.washoutHours ?? null,
+          reference: rule.reference,
+          escalatedByCompetitionWindow: false,
+        };
+      }
     }
 
     switch (rule.scope) {
@@ -345,7 +405,12 @@ function buildSupplementRiskFinding(
     indicators.opaqueLabelKeywords,
   );
 
-  if (!nameHit && !ingredientHit && !opaqueHit && !context.isDietarySupplement) {
+  if (
+    !nameHit &&
+    !ingredientHit &&
+    !opaqueHit &&
+    !context.isDietarySupplement
+  ) {
     return null;
   }
 
@@ -502,7 +567,9 @@ function buildRecommendedActions(
         "Avoid unless the product is certified by a batch-testing programme such as Informed Sport or NSF Certified for Sport.",
       );
       actions.push("Keep the product, batch number, and receipt.");
-      actions.push(`Check the specific batch with ${nado} if you intend to use it.`);
+      actions.push(
+        `Check the specific batch with ${nado} if you intend to use it.`,
+      );
       break;
 
     case "CONDITIONAL":
@@ -527,7 +594,9 @@ function buildRecommendedActions(
       break;
 
     case "NOT_PROHIBITED":
-      actions.push("No anti-doping restriction was identified for this product.");
+      actions.push(
+        "No anti-doping restriction was identified for this product.",
+      );
       actions.push(
         "Re-scan if the formulation changes, and keep this record in your Passport.",
       );
@@ -548,10 +617,7 @@ export function evaluateLabel(
   context: ScanContext = {},
   now: Date = new Date(),
 ): SafetyEvaluation {
-  const competition = buildCompetitionContext(
-    profile.nextCompetitionDate,
-    now,
-  );
+  const competition = buildCompetitionContext(profile.nextCompetitionDate, now);
   const findings: IngredientFinding[] = [];
 
   if (isUnreadable(extracted)) {
@@ -624,10 +690,7 @@ export function evaluateLabel(
     extracted.productName,
     DB.unverifiedIndicators.keywords,
   );
-  if (
-    productUnverified &&
-    !findings.some((f) => f.status === "UNVERIFIED")
-  ) {
+  if (productUnverified && !findings.some((f) => f.status === "UNVERIFIED")) {
     findings.push(
       buildUnverifiedFinding(extracted.productName, productUnverified),
     );

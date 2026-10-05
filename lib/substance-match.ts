@@ -9,9 +9,31 @@
  */
 
 import rulesData from "@/data/wada-rules.json";
+import listData from "@/data/wada-list-2026.json";
 import type { WadaClass, WadaRulesDatabase } from "@/types";
 
 const DB = rulesData as WadaRulesDatabase;
+
+interface ListedClass {
+  title: string;
+  scope: string;
+  baseStatus: string;
+  inCompetitionStatus?: string;
+  tueRequired: boolean;
+  rationale: string;
+  reference: string;
+  substances: string[];
+  exceptions: string[];
+}
+interface ListedFile {
+  version: string;
+  listEdition: string;
+  sports: string[];
+  classes: Record<string, ListedClass>;
+}
+
+/** The full official list, carrying class-level status only. */
+export const LISTED = listData as ListedFile;
 
 /**
  * Collapse a label string to a comparable form: lowercase, punctuation to
@@ -82,8 +104,9 @@ interface IndexEntry {
  * that mattered, so "I found paracetamol" must never be read as "this product
  * is clean".
  */
-const INDEX: IndexEntry[] = DB.substances
-  .flatMap((rule) =>
+const INDEX: IndexEntry[] = [
+  // Hand-curated entries first: they carry route, dose and washout detail.
+  ...DB.substances.flatMap((rule) =>
     rule.aliases.map((alias) => ({
       needle: normalizeTerm(alias),
       substance: rule.substance,
@@ -91,7 +114,18 @@ const INDEX: IndexEntry[] = DB.substances
       wadaClass: rule.wadaClass,
       ruleId: rule.id,
     })),
-  )
+  ),
+  // Then every substance named in the official List, at class-level status.
+  ...Object.entries(LISTED.classes).flatMap(([cls, group]) =>
+    group.substances.map((name) => ({
+      needle: normalizeTerm(name),
+      substance: name,
+      alias: name,
+      wadaClass: cls as WadaClass,
+      ruleId: `wada2026-${cls}-${normalizeTerm(name).replace(/\s+/g, "-")}`,
+    })),
+  ),
+]
   // Longest first so "methylprednisolone" is not reported as a shorter alias.
   .sort((a, b) => b.needle.length - a.needle.length);
 

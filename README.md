@@ -9,7 +9,7 @@ Prohibited List **in your competition context**, and keeps a private record of
 everything you have checked.
 
 > [!WARNING]
-> This is an MVP built on a curated subset of the Prohibited List, not an
+> This is an MVP built from the official Prohibited List, but it is not an
 > official compliance tool. It does not replace a determination by your National
 > Anti-Doping Organisation (NADO), your International Federation, or
 > [Global DRO](https://www.globaldro.com). Under the WADA Code you are strictly
@@ -114,10 +114,20 @@ escalate automatically, and you can always ask for an AI scan yourself.
 
 ### Reference data
 
-[`data/wada-rules.json`](data/wada-rules.json) curates the 2025 Prohibited List:
+Two layers, both shipped to the device:
 
-- **39 substance entries** across S0–S9, P1, M1–M2, and the Monitoring Program,
-  with aliases, brand names, and botanical cover-names (`geranium extract` →
+[`data/wada-list-2026.json`](data/wada-list-2026.json) is extracted from the
+official **WADA 2026 Prohibited List** PDF by
+[`scripts/extract-wada-list.py`](scripts/extract-wada-list.py) — every named
+substance across S1–S9 and P1, carrying its class-level status, plus the
+EXCEPTIONS each class defines.
+
+[`data/wada-rules.json`](data/wada-rules.json) stays hand-curated and takes
+precedence, because it encodes what a class alone cannot:
+
+- inhaled dose ceilings (salbutamol 1600 µg/24h, vilanterol 25 µg/24h)
+- which routes stay permitted (topical glucocorticoids) and which do not
+- washout periods, and brand or botanical cover-names (`geranium extract` →
   DMAA, `Ma Huang` → ephedrine)
 - **173 permitted substances**, including inert excipients so a filler like
   sorbitol does not drag a product to `UNVERIFIED`
@@ -195,6 +205,7 @@ GEMINI_API_KEY=your_key_here
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript, no emit |
+| `npm run verify:coverage` | **Prohibited-List coverage** — substances across S1–S9/P1, plus every official EXCEPTION, which must never read as prohibited |
 | `npm run verify:demo` | **18 rules-engine assertions** — presets, the 48-hour boundary, route and sport sensitivity, determinism |
 | `npm run verify:guards` | **16 quota-guard assertions** — rate limits, extraction cache, single-flight. No network required |
 | `npm run verify:vision` | **23 provider-chain assertions** — failure classification, ordering, OpenRouter reply parsing. No credentials required |
