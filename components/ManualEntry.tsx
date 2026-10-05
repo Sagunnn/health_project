@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Keyboard, Search, Sparkles } from "lucide-react";
+import type { IngredientSource } from "@/lib/label-text";
 import type { AdministrationRoute, ExtractedLabel } from "@/types";
 
 interface ManualEntryProps {
@@ -19,6 +20,8 @@ interface ManualEntryProps {
   /** Raw OCR text, disclosed so the athlete can see what was read. */
   ocrText?: string;
   ocrConfidence?: number;
+  /** How the ingredient list was derived, so a guess can be flagged. */
+  derivedFrom?: IngredientSource;
   /** Escalate this image to the Vision model instead. */
   onUseAi?: () => void;
 }
@@ -53,6 +56,7 @@ export default function ManualEntry({
   initialIngredients,
   ocrText,
   ocrConfidence,
+  derivedFrom,
   onUseAi,
 }: ManualEntryProps) {
   const isReview = Boolean(ocrText);
@@ -131,6 +135,26 @@ export default function ManualEntry({
             Phone cameras miss small print, and a missed ingredient is the one
             that matters.
           </p>
+          {(derivedFrom === "product-name" ||
+            derivedFrom === "parentheses") && (
+            <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+              <span className="font-semibold">
+                No ingredients panel was found on this pack.
+              </span>{" "}
+              {derivedFrom === "product-name"
+                ? "The line below is the product title, which on generic packs is also the substance name."
+                : "The line below came from the brackets after the brand name."}{" "}
+              Add anything else printed on the box before continuing.
+            </p>
+          )}
+          {derivedFrom === "none" && (
+            <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+              <span className="font-semibold">
+                No ingredients could be made out.
+              </span>{" "}
+              Type them from the packaging below, or use the AI scan.
+            </p>
+          )}
           {typeof ocrConfidence === "number" && (
             <p className="mt-1 text-[11px] text-blue-700">
               Reading confidence {Math.round(ocrConfidence)}%

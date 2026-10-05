@@ -67,11 +67,19 @@ function splitFragments(line: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Where the ingredient list came from, strongest first. Anything weaker than
+ * an inline list is a guess the athlete should be warned about.
+ */
+export type IngredientSource =
+  "ingredient-block" | "inline-list" | "parentheses" | "product-name" | "none";
+
 export interface ParsedLabel {
   productName: string;
   ingredients: string[];
   /** Lines the heuristics drew from, for the "what we read" disclosure. */
   sourceLines: string[];
+  derivedFrom: IngredientSource;
 }
 
 export function parseLabelText(raw: string): ParsedLabel {
@@ -82,6 +90,7 @@ export function parseLabelText(raw: string): ParsedLabel {
 
   const collected: string[] = [];
   const sourceLines: string[] = [];
+  let derivedFrom: IngredientSource = "none";
 
   // Pass 1: lines inside an explicit ingredient block.
   let inBlock = false;
@@ -106,6 +115,8 @@ export function parseLabelText(raw: string): ParsedLabel {
     }
   }
 
+  if (collected.length > 0) derivedFrom = "ingredient-block";
+
   // Pass 2: a comma-separated run of capitalised words is how most OTC boxes
   // print actives on the front, with no heading at all.
   if (collected.length === 0) {
@@ -120,6 +131,32 @@ export function parseLabelText(raw: string): ParsedLabel {
         collected.push(...named);
       }
     }
+    if (collected.length > 0) derivedFrom = "inline-list";
+  }
+
+  // Pass 3: prescription packs print the molecule in parentheses after a
+  // brand — "LAMADOL (Tramadol HCl)" — with no list and no heading. Missing
+  // this meant a prohibited substance produced an empty result.
+  if (collected.length === 0) {
+    for (const line of lines) {
+      for (const match of line.matchAll(/\(([^)]{3,60})\)/g)) {
+        const inner = match[1]!.trim();
+        if (!looksLikeIngredient(inner)) continue;
+        sourceLines.push(line);
+        collected.push(inner);
+      }
+    }
+    if (collected.length > 0) derivedFrom = "parentheses";
+  }
+
+  // Pass 4: generic packs name the molecule in the title itself — "Frusemide
+  // Tablets I.P. 40 mg". Proposing that line is the difference between an
+  // athlete seeing a prohibited diuretic and seeing nothing at all.
+  const nameGuess = guessProductName(lines);
+  if (collected.length === 0 && looksLikeIngredient(nameGuess)) {
+    sourceLines.push(nameGuess);
+    collected.push(nameGuess);
+    derivedFrom = "product-name";
   }
 
   const seen = new Set<string>();
@@ -133,9 +170,10 @@ export function parseLabelText(raw: string): ParsedLabel {
   }
 
   return {
-    productName: guessProductName(lines),
+    productName: nameGuess,
     ingredients,
     sourceLines: [...new Set(sourceLines)],
+    derivedFrom: ingredients.length === 0 ? "none" : derivedFrom,
   };
 }
 
@@ -155,7 +193,9 @@ function guessProductName(lines: string[]): string {
     const upper = (line.match(/\p{Lu}/gu) ?? []).length;
     const ratio = upper / letters.length;
     // Favour long, mostly-uppercase lines; penalise obvious code lines.
-    const score = ratio * 2 + Math.min(letters.length, 24) / 24 -
+    const score =
+      ratio * 2 +
+      Math.min(letters.length, 24) / 24 -
       (/\d{3,}/.test(line) ? 1.5 : 0);
     if (score > bestScore) {
       bestScore = score;

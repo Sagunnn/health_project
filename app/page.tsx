@@ -244,6 +244,7 @@ export default function Home() {
               initialIngredients={review?.ingredients}
               ocrText={review?.text}
               ocrConfidence={review?.confidence}
+              derivedFrom={review?.derivedFrom}
               onUseAi={review ? () => scanWithAi(review.dataUrl) : undefined}
             />
 

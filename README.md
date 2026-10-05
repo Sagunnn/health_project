@@ -170,6 +170,7 @@ GEMINI_API_KEY=your_key_here
 | `npm run verify:demo` | **18 rules-engine assertions** — presets, the 48-hour boundary, route and sport sensitivity, determinism |
 | `npm run verify:guards` | **16 quota-guard assertions** — rate limits, extraction cache, single-flight. No network required |
 | `npm run verify:vision` | **23 provider-chain assertions** — failure classification, ordering, OpenRouter reply parsing. No credentials required |
+| `npm run verify:label` | **Label-parsing cases** built from verbatim OCR of real packaging — ingredient blocks, inline lists, bracketed molecules, title-line generics |
 
 There is also [`scripts/browser-check.mjs`](scripts/browser-check.mjs), which
 drives the app in Chromium and fails on any console error, exception, or React
