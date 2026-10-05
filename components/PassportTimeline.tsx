@@ -99,7 +99,7 @@ export default function PassportTimeline({
                     <p className="truncate text-sm font-semibold text-slate-100">
                       {entry.productName || "Unnamed product"}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-400">
                       {formatTimestamp(entry.createdAt)}
                     </p>
                   </div>
@@ -122,7 +122,7 @@ export default function PassportTimeline({
                 </p>
 
                 {entry.ingredients.length > 0 && (
-                  <p className="mt-2 truncate text-[11px] text-slate-600">
+                  <p className="mt-2 truncate text-[11px] text-slate-400">
                     {entry.ingredients.join(" · ")}
                   </p>
                 )}

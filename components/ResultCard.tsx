@@ -152,14 +152,14 @@ export default function ResultCard({
                   {finding.reasons.map((reason) => (
                     <li
                       key={reason}
-                      className="text-xs leading-relaxed text-slate-600"
+                      className="text-xs leading-relaxed text-slate-300"
                     >
                       {reason}
                     </li>
                   ))}
                 </ul>
                 {finding.reference && (
-                  <p className="mt-2 text-[11px] italic text-slate-600">
+                  <p className="mt-2 text-[11px] italic text-slate-400">
                     {finding.reference}
                   </p>
                 )}
