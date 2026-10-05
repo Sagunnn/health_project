@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Keyboard, Search } from "lucide-react";
+import { Keyboard, Search, Sparkles } from "lucide-react";
 import type { AdministrationRoute, ExtractedLabel } from "@/types";
 
 interface ManualEntryProps {
@@ -13,6 +13,14 @@ interface ManualEntryProps {
   disabled?: boolean;
   /** Opens the form expanded, e.g. after a failed OCR attempt. */
   defaultOpen?: boolean;
+  /** Pre-filled proposal from on-device OCR, awaiting confirmation. */
+  initialProductName?: string;
+  initialIngredients?: string[];
+  /** Raw OCR text, disclosed so the athlete can see what was read. */
+  ocrText?: string;
+  ocrConfidence?: number;
+  /** Escalate this image to the Vision model instead. */
+  onUseAi?: () => void;
 }
 
 const ROUTES: Array<{ value: AdministrationRoute; label: string }> = [
@@ -41,10 +49,19 @@ export default function ManualEntry({
   onSubmit,
   disabled,
   defaultOpen = false,
+  initialProductName = "",
+  initialIngredients,
+  ocrText,
+  ocrConfidence,
+  onUseAi,
 }: ManualEntryProps) {
-  const [open, setOpen] = useState(defaultOpen);
-  const [productName, setProductName] = useState("");
-  const [ingredientText, setIngredientText] = useState("");
+  const isReview = Boolean(ocrText);
+  const [open, setOpen] = useState(defaultOpen || isReview);
+  const [productName, setProductName] = useState(initialProductName);
+  const [ingredientText, setIngredientText] = useState(
+    (initialIngredients ?? []).join("\n"),
+  );
+  const [showRaw, setShowRaw] = useState(false);
   const [route, setRoute] = useState<AdministrationRoute>("ORAL");
   const [isSupplement, setIsSupplement] = useState(false);
 
@@ -92,7 +109,7 @@ export default function ManualEntry({
     >
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-slate-900">
-          Enter ingredients
+          {isReview ? "Check what we read" : "Enter ingredients"}
         </h2>
         <button
           type="button"
@@ -103,7 +120,30 @@ export default function ManualEntry({
         </button>
       </div>
 
-      <label htmlFor="manual-product" className="mb-1.5 block text-xs font-medium text-slate-700">
+      {isReview && (
+        <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+          <p className="text-xs text-blue-900">
+            Read on your device — no internet needed, and it uses none of your
+            scan allowance.{" "}
+            <span className="font-semibold">
+              Check every ingredient against the packaging before continuing.
+            </span>{" "}
+            Phone cameras miss small print, and a missed ingredient is the one
+            that matters.
+          </p>
+          {typeof ocrConfidence === "number" && (
+            <p className="mt-1 text-[11px] text-blue-700">
+              Reading confidence {Math.round(ocrConfidence)}%
+              {ocrConfidence < 70 ? " — low, please read carefully." : ""}
+            </p>
+          )}
+        </div>
+      )}
+
+      <label
+        htmlFor="manual-product"
+        className="mb-1.5 block text-xs font-medium text-slate-700"
+      >
         Product name (optional)
       </label>
       <input
@@ -115,7 +155,10 @@ export default function ManualEntry({
         className={`${inputClass} mb-3`}
       />
 
-      <label htmlFor="manual-ingredients" className="mb-1.5 block text-xs font-medium text-slate-700">
+      <label
+        htmlFor="manual-ingredients"
+        className="mb-1.5 block text-xs font-medium text-slate-700"
+      >
         Active ingredients
       </label>
       <textarea
@@ -123,7 +166,9 @@ export default function ManualEntry({
         value={ingredientText}
         onChange={(e) => setIngredientText(e.target.value)}
         rows={3}
-        placeholder={"One per line, or separated by commas\ne.g. Tramadol Hydrochloride 50 mg"}
+        placeholder={
+          "One per line, or separated by commas\ne.g. Tramadol Hydrochloride 50 mg"
+        }
         className={`${inputClass} mb-1 resize-y`}
       />
       <p className="mb-3 text-xs text-slate-500">
@@ -132,7 +177,10 @@ export default function ManualEntry({
           : `${ingredients.length} ingredient${ingredients.length === 1 ? "" : "s"} detected.`}
       </p>
 
-      <label htmlFor="manual-route" className="mb-1.5 block text-xs font-medium text-slate-700">
+      <label
+        htmlFor="manual-route"
+        className="mb-1.5 block text-xs font-medium text-slate-700"
+      >
         How is it taken?
       </label>
       <select
@@ -164,6 +212,23 @@ export default function ManualEntry({
         </span>
       </label>
 
+      {isReview && (
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={() => setShowRaw((v) => !v)}
+            className="text-xs font-medium text-blue-600 hover:text-blue-700"
+          >
+            {showRaw ? "Hide" : "Show"} everything we read from the label
+          </button>
+          {showRaw && (
+            <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-100 p-2 text-[11px] leading-snug text-slate-600">
+              {ocrText}
+            </pre>
+          )}
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={!canSubmit}
@@ -172,6 +237,18 @@ export default function ManualEntry({
         <Search className="h-4 w-4" aria-hidden />
         Check against WADA list
       </button>
+
+      {onUseAi && (
+        <button
+          type="button"
+          onClick={onUseAi}
+          disabled={disabled}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-blue-400 hover:text-blue-700 disabled:opacity-50"
+        >
+          <Sparkles className="h-4 w-4" aria-hidden />
+          Couldn&apos;t read it? Use AI scan
+        </button>
+      )}
     </form>
   );
 }

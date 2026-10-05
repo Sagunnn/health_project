@@ -56,16 +56,25 @@ composition impossible to verify.
 The central design rule: **the AI never decides anything.**
 
 ```
-  photo ──► Gemini vision OCR ──► { productName, ingredients, isSupplement }
-                                              │
-   athlete profile (sport, event date, route) ─┤
-                                              ▼
-                              lib/rules-engine.ts  ◄── data/wada-rules.json
-                                   (deterministic)
-                                              │
-                                              ▼
-                              status + reasons + next steps
+  photo ──► on-device OCR ──► you confirm what it read
+            (Tesseract)                   │
+                                          │   ──► AI scan, only if the
+                                          │        label won't read
+                                          ▼
+   athlete profile (sport, event date, route) ─┐
+                                               ▼
+                               lib/rules-engine.ts  ◄── data/wada-rules.json
+                                    (deterministic)
+                                               │
+                                               ▼
+                               status + reasons + next steps
 ```
+
+The label is read **on your phone first**, and what it read is shown to you to
+confirm or correct before anything is judged. That keeps the common case free,
+offline and private — the image never leaves the device — and it puts a human
+between imperfect OCR and a safety-critical verdict. A photo only goes to
+Gemini if you ask for it.
 
 - The vision model is an **OCR engine only**. It is never asked whether something
   is permitted, what WADA class it falls under, or what the athlete should do.
@@ -88,14 +97,16 @@ The central design rule: **the AI never decides anything.**
 
 ### Three ways to check a product
 
-| Mode | Request | Needs an API key? |
+| Mode | Reads the label | Needs an API key? |
 | --- | --- | --- |
-| Demo preset | `{ presetId }` | No |
-| Photo / camera | `{ imageBase64 }` | Yes |
-| Typed by hand | `{ extracted }` | No |
+| Photo / camera | On your device, then you confirm | **No** |
+| Demo preset | Fixed test data | No |
+| Typed by hand | You type it | No |
+| AI scan | Gemini, on request | Yes |
 
-Manual entry is the fallback that matters: no key, no signal, or a label that
-will not photograph legibly.
+Only the last row spends quota. On-device reading takes about **0.8s** once the
+language data is cached (the first run downloads it), against 13–30s for a
+round trip to the model.
 
 ---
 
@@ -113,9 +124,11 @@ npm run dev
 Open <http://localhost:3000>. The five demo presets work immediately — no API
 key needed.
 
-### Enabling photo scanning
+### Enabling the AI scan fallback
 
-Only camera and photo-upload scanning needs a key. Get a free one from
+Everything works without a key — on-device reading, presets and manual entry.
+A key is only needed for the *AI scan* button, used when a label will not read
+on the device. Get a free one from
 [Google AI Studio](https://aistudio.google.com/apikey):
 
 ```bash
@@ -142,6 +155,7 @@ GEMINI_API_KEY=your_key_here
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run verify:demo` | **18 rules-engine assertions** — presets, the 48-hour boundary, route and sport sensitivity, determinism |
+| `npm run verify:guards` | **16 quota-guard assertions** — rate limits, extraction cache, single-flight. No network required |
 
 There is also [`scripts/browser-check.mjs`](scripts/browser-check.mjs), which
 drives the app in Chromium and fails on any console error, exception, or React
@@ -181,6 +195,10 @@ components/             UI, one component per screen concern
 data/wada-rules.json    Curated WADA reference database
 lib/
   rules-engine.ts       Deterministic evaluation — the heart of the app
+  local-ocr.ts          On-device label reading (Tesseract, dynamic import)
+  label-text.ts         Parses OCR text into candidate ingredients
+  extraction-cache.ts   Image-hash cache + single-flight, to spare quota
+  rate-limit.ts         Per-client and global caps on the AI scan path
   demo-presets.ts       The five stakeholder cases
   status-styles.ts      Tier colours and icons
   storage.ts            SSR-safe localStorage helpers
@@ -188,16 +206,19 @@ types/index.ts          Shared contracts
 scripts/                Engine assertions + browser verification
 ```
 
-Tech: Next.js 14 (App Router) · TypeScript · Tailwind CSS · `ai` +
-`@ai-sdk/google` · `zod` · `lucide-react`
+Tech: Next.js 14 (App Router) · TypeScript · Tailwind CSS · `tesseract.js` ·
+`ai` + `@ai-sdk/google` · `zod` · `lucide-react`
 
 ---
 
 ## Privacy
 
 Your profile and scan history live in `localStorage` on your device. There is no
-database, no account, and no login. Nothing is uploaded except the label image
-you choose to scan, which goes to Google's Gemini API for OCR.
+database, no account, and no login.
+
+Label photos are read **on your device** and are not uploaded. An image only
+leaves your phone if you explicitly choose the AI scan fallback, which sends it
+to Google's Gemini API for transcription.
 
 ---
 

@@ -255,7 +255,12 @@ export interface ExtractedLabel {
   ingredients: string[];
 }
 
-export type ExtractionSource = "vision-llm" | "mock-preset" | "manual-entry";
+export type ExtractionSource =
+  | "vision-llm"
+  /** Read on the athlete's own device, then confirmed by them. */
+  | "local-ocr"
+  | "mock-preset"
+  | "manual-entry";
 
 /** Optional per-scan details the athlete can supply to sharpen the verdict. */
 export interface ScanContext {

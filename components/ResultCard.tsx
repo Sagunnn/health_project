@@ -7,7 +7,8 @@ import { STATUS_STYLES } from "@/lib/status-styles";
 import type { ScanResponse } from "@/types";
 
 const SOURCE_LABELS: Record<ScanResponse["extractionSource"], string> = {
-  "vision-llm": "Read by label OCR",
+  "vision-llm": "Read by AI label scan",
+  "local-ocr": "Read on your device, confirmed by you",
   "manual-entry": "Entered manually",
   "mock-preset": "Demo preset",
 };
@@ -55,8 +56,8 @@ export default function ResultCard({
             {extracted.productName || "Unnamed product"}
           </p>
           <p className="text-xs text-slate-500">
-            {SOURCE_LABELS[extractionSource]}{" "}
-            · WADA list {evaluation.rulesVersion}
+            {SOURCE_LABELS[extractionSource]} · WADA list{" "}
+            {evaluation.rulesVersion}
           </p>
         </div>
         <button
@@ -117,7 +118,10 @@ export default function ResultCard({
         <ul className="mt-2 space-y-1.5">
           {evaluation.recommendedActions.map((action) => (
             <li key={action} className="flex gap-2 text-sm text-slate-700">
-              <span aria-hidden className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
+              <span
+                aria-hidden
+                className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`}
+              />
               {action}
             </li>
           ))}
@@ -151,7 +155,10 @@ export default function ResultCard({
                 </p>
                 <ul className="mt-2 space-y-1">
                   {finding.reasons.map((reason) => (
-                    <li key={reason} className="text-xs leading-relaxed text-slate-600">
+                    <li
+                      key={reason}
+                      className="text-xs leading-relaxed text-slate-600"
+                    >
                       {reason}
                     </li>
                   ))}

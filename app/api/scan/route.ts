@@ -132,7 +132,7 @@ const requestSchema = z.object({
       ingredients: z.array(z.string()),
     })
     .optional(),
-  source: z.enum(["mock-preset", "manual-entry"]).optional(),
+  source: z.enum(["mock-preset", "manual-entry", "local-ocr"]).optional(),
   profile: z.record(z.unknown()).optional(),
   context: z
     .object({

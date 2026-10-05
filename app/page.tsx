@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ShieldCheck } from "lucide-react";
+import { AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 
 import AthleteProfileForm from "@/components/AthleteProfile";
 import BottomNav, { type TabId } from "@/components/BottomNav";
 import DemoPresets from "@/components/DemoPresets";
 import ManualEntry from "@/components/ManualEntry";
+import { readLabelLocally, type LocalOcrResult } from "@/lib/local-ocr";
 import PassportTimeline from "@/components/PassportTimeline";
 import ResultCard from "@/components/ResultCard";
 import ScannerModal from "@/components/ScannerModal";
@@ -48,6 +49,12 @@ export default function Home() {
   // racing it, so a double tap cannot spend two model calls or land a stale
   // result over a newer one.
   const inFlight = useRef<AbortController | null>(null);
+  // On-device OCR result awaiting the athlete's confirmation, plus the image
+  // it came from so they can escalate the same photo to the AI scan.
+  const [review, setReview] = useState<
+    (LocalOcrResult & { dataUrl: string }) | null
+  >(null);
+  const [ocrProgress, setOcrProgress] = useState<number | null>(null);
 
   useEffect(() => {
     setProfile(loadProfile());
@@ -114,18 +121,44 @@ export default function Home() {
     ) => {
       void runScan({
         extracted,
-        source: "manual-entry",
+        // Confirmed OCR text has its own provenance; it was not hand-typed.
+        source: review ? "local-ocr" : "manual-entry",
         context: { route, isDietarySupplement },
       });
+    },
+    [runScan, review],
+  );
+
+  /** Escalates an image to the Vision model. Costs quota, so it is explicit. */
+  const scanWithAi = useCallback(
+    (dataUrl: string) => {
+      setReview(null);
+      void runScan({ imageBase64: dataUrl });
     },
     [runScan],
   );
 
+  /**
+   * Read the label on-device first and show the result for confirmation.
+   * The model is only involved if this cannot read the packaging.
+   */
   const handleCapture = useCallback(
-    (dataUrl: string) => {
-      void runScan({ imageBase64: dataUrl });
+    async (dataUrl: string) => {
+      setError(null);
+      setResult(null);
+      setOcrProgress(0);
+      try {
+        const ocr = await readLabelLocally(dataUrl, setOcrProgress);
+        setReview({ ...ocr, dataUrl });
+        setManualOpen(false);
+      } catch {
+        // Tesseract could not start — fall straight through to the model.
+        scanWithAi(dataUrl);
+      } finally {
+        setOcrProgress(null);
+      }
     },
-    [runScan],
+    [scanWithAi],
   );
 
   const handleSave = useCallback(
@@ -182,14 +215,36 @@ export default function Home() {
         {tab === "scanner" && (
           <div className="space-y-8">
             <div className="pt-2">
-              <ScannerModal onCapture={handleCapture} isScanning={isScanning} />
+              <ScannerModal
+                onCapture={(dataUrl) => void handleCapture(dataUrl)}
+                isScanning={isScanning}
+              />
             </div>
 
+            {ocrProgress !== null && (
+              <p className="flex items-center justify-center gap-2 text-sm font-medium text-slate-600">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Reading the label on your device…{" "}
+                {Math.round(ocrProgress * 100)}%
+              </p>
+            )}
+
             <ManualEntry
-              key={manualOpen ? "open" : "closed"}
+              key={
+                review
+                  ? `review-${review.durationMs}`
+                  : manualOpen
+                    ? "open"
+                    : "closed"
+              }
               onSubmit={handleManualEntry}
               disabled={isScanning}
               defaultOpen={manualOpen}
+              initialProductName={review?.productName}
+              initialIngredients={review?.ingredients}
+              ocrText={review?.text}
+              ocrConfidence={review?.confidence}
+              onUseAi={review ? () => scanWithAi(review.dataUrl) : undefined}
             />
 
             {error && (
