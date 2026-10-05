@@ -36,3 +36,6 @@ venv
 
 *.pptx
 
+
+# Source PDFs kept locally; the extracted data lives in data/wada-list-2026.json
+*.pdf
