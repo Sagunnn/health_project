@@ -18,7 +18,7 @@ BESAFE by AIMS is an athlete-facing medication and dietary supplement safety pla
    - `SUPPLEMENT_RISK` (🟠): Dietary supplement flagged for inherent contamination risk, even if listed ingredients look clear.
    - `UNVERIFIED` (⚪): Unrecognized or foreign product requiring NADO/expert review.
 4. **Resilience & Fallbacks:**
-   - The demo must run even if `OPENAI_API_KEY` is missing by using a deterministic fallback mock parser for the 5 demo presets.
+   - The demo must run even if `GEMINI_API_KEY` is missing, via the deterministic demo presets and manual ingredient entry.
    - Use `localStorage` for the Athlete Profile and Passport history (no external database or login required for MVP).
 
 ---
@@ -26,7 +26,7 @@ BESAFE by AIMS is an athlete-facing medication and dietary supplement safety pla
 ## Tech Stack & Commands
 - **Framework:** Next.js 14+ (App Router), TypeScript, Tailwind CSS
 - **Icons:** `lucide-react`
-- **AI SDK:** `ai`, `@ai-sdk/openai`, `zod`
+- **AI SDK:** `ai`, `@ai-sdk/google` (Gemini vision OCR), `zod`
 - **State/Storage:** Browser `localStorage`
 
 ### Key Commands
