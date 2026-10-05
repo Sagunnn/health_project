@@ -143,11 +143,32 @@ function coerceProfile(raw: unknown): AthleteProfile {
   return { ...DEFAULT_PROFILE, ...((raw ?? {}) as Partial<AthleteProfile>) };
 }
 
-function isRecoverable(error: unknown): boolean {
+/**
+ * Wall-clock budget for the whole extraction, across every model in the
+ * chain. Without it, three models each retrying with backoff took 90s on an
+ * exhausted quota — long past Vercel's function timeout, so the athlete would
+ * get a 504 instead of the manual-entry fallback.
+ */
+const OCR_BUDGET_MS = 30_000;
+
+type FailureKind = "quota" | "unavailable" | "other";
+
+function classify(error: unknown): FailureKind {
   const message = error instanceof Error ? error.message : String(error);
-  return /no longer available|not found|high demand|overloaded|unavailable|quota|rate limit|503|429/i.test(
-    message,
-  );
+  if (/RESOURCE_EXHAUSTED|exceeded your current quota|quota|rate limit|429/i.test(message)) {
+    return "quota";
+  }
+  if (/no longer available|not found|high demand|overloaded|unavailable|503/i.test(message)) {
+    return "unavailable";
+  }
+  return "other";
+}
+
+/** An error carrying why the whole chain gave up, for the user-facing copy. */
+class ExtractionFailure extends Error {
+  constructor(readonly kind: FailureKind, cause?: unknown) {
+    super(`Label extraction failed (${kind}).`, { cause });
+  }
 }
 
 interface VisionResult {
@@ -165,14 +186,23 @@ async function extractWithGemini(
 
   const google = createGoogleGenerativeAI({ apiKey: key });
   const { data, mimeType } = parseImage(imageBase64);
+  const startedAt = Date.now();
   let lastError: unknown;
+  let sawQuota = false;
 
   for (const model of MODEL_CHAIN) {
+    const remaining = OCR_BUDGET_MS - (Date.now() - startedAt);
+    // Leave enough headroom that an attempt can plausibly finish.
+    if (remaining < 5_000) break;
+
     try {
       const result = await generateObject({
         model: google(model),
         schema: extractionSchema,
-        maxRetries: 1,
+        // The chain IS the retry strategy; per-call retries only multiply the
+        // wait on an error that will not clear in seconds.
+        maxRetries: 0,
+        abortSignal: AbortSignal.timeout(remaining),
         messages: [
           {
             role: "user",
@@ -194,13 +224,15 @@ async function extractWithGemini(
       };
     } catch (cause) {
       lastError = cause;
-      console.error(`[scan] model ${model} failed:`, cause);
-      if (!isRecoverable(cause)) throw cause;
-      // Otherwise fall through and try the next model in the chain.
+      const kind = classify(cause);
+      if (kind === "quota") sawQuota = true;
+      console.error(`[scan] model ${model} failed (${kind}):`, cause);
+      if (kind === "other") throw new ExtractionFailure("other", cause);
+      // Quota is per-model, so the next model in the chain may still work.
     }
   }
 
-  throw lastError ?? new Error("No Gemini model was available.");
+  throw new ExtractionFailure(sawQuota ? "quota" : "unavailable", lastError);
 }
 
 /* ------------------------------------------------------------------ *
@@ -307,8 +339,14 @@ export async function POST(request: Request) {
         console.error("[scan] label OCR failed:", cause);
         label = { productName: "Unrecognised product", ingredients: [] };
         extractionSource = "vision-llm";
+        const kind =
+          cause instanceof ExtractionFailure ? cause.kind : "other";
         warning =
-          "Label OCR failed, so no ingredients could be read. Enter them manually or use a demo preset.";
+          kind === "quota"
+            ? "The daily free-tier limit for label scanning has been reached. It resets within 24 hours — enter the ingredients manually in the meantime."
+            : kind === "unavailable"
+              ? "The label-scanning service is temporarily unavailable. Enter the ingredients manually or use a demo preset."
+              : "Label OCR failed, so no ingredients could be read. Enter them manually or use a demo preset.";
       }
     }
   } else if (extracted) {

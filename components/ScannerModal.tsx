@@ -1,40 +1,44 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Loader2, Upload } from "lucide-react";
+import { Camera, ImageIcon, Loader2 } from "lucide-react";
 import { downscaleImage } from "@/lib/image";
 
 interface ScannerModalProps {
-  /** Receives a data: URL for the chosen image. */
+  /** Receives a downscaled data: URL for the chosen image. */
   onCapture: (dataUrl: string) => void;
   isScanning: boolean;
 }
 
 /**
  * Sanity ceiling on the file we will even attempt to decode. Anything within
- * it gets downscaled before upload, so this is about avoiding a huge decode,
- * not about the request size.
+ * it gets downscaled before upload, so this bounds the decode cost, not the
+ * request size.
  */
 const MAX_INPUT_BYTES = 40 * 1024 * 1024;
 
 /**
- * Camera / file-upload trigger — DESIGN.md §4.
+ * Label capture — DESIGN.md §4.
  *
- * `capture="environment"` opens the rear camera on mobile and degrades to a
- * normal file picker on desktop, so one control covers both without a
- * separate camera permission flow.
+ * Two inputs, one handler. `capture="environment"` makes iOS and Android open
+ * the rear camera directly; the second input omits it so the OS offers the
+ * photo library instead. A single input cannot do both, because `capture` is
+ * a request for a specific source rather than a hint. On desktop, where there
+ * is no camera intent, both fall back to an ordinary file picker.
  */
 export default function ScannerModal({
   onCapture,
   isScanning,
 }: ScannerModalProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isPreparing, setIsPreparing] = useState(false);
 
-  async function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
     const file = event.target.files?.[0];
-    // Reset so selecting the same file twice still fires a change event.
+    // Reset so picking the same file twice still fires a change event.
     event.target.value = "";
     if (!file) return;
 
@@ -65,53 +69,75 @@ export default function ScannerModal({
 
   return (
     <div className="flex flex-col items-center">
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => cameraInputRef.current?.click()}
-        aria-label="Scan a product label with your camera"
-        className="flex h-32 w-32 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all active:scale-95 disabled:opacity-70"
-      >
-        {busy ? (
-          <Loader2 className="h-12 w-12 animate-spin" aria-hidden />
-        ) : (
-          <Camera className="h-12 w-12" aria-hidden />
+      {/* Primary: Take Photo */}
+      <div className="relative flex h-32 w-32 items-center justify-center">
+        {isScanning && (
+          <span
+            aria-hidden
+            className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-60"
+          />
         )}
-      </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => cameraInputRef.current?.click()}
+          aria-label="Take a photo of a product label"
+          className="relative flex h-32 w-32 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all active:scale-95 disabled:opacity-70"
+        >
+          {busy ? (
+            <Loader2 className="h-12 w-12 animate-spin" aria-hidden />
+          ) : (
+            <Camera className="h-12 w-12" aria-hidden />
+          )}
+        </button>
+      </div>
 
-      <p className="mt-3 text-sm font-medium text-slate-700">
+      <p
+        className="mt-3 text-sm font-semibold text-slate-800"
+        aria-live="polite"
+      >
         {isPreparing
           ? "Preparing photo…"
           : isScanning
-            ? "Reading label…"
-            : "Scan a label"}
+            ? "AI scanning label…"
+            : "Take Photo"}
+      </p>
+      <p className="mt-0.5 h-4 text-xs text-slate-500">
+        {isScanning
+          ? "Reading the ingredients, this can take a few seconds."
+          : isPreparing
+            ? ""
+            : "Point at the ingredients panel"}
       </p>
 
+      {/* Secondary: Upload from Gallery */}
       <button
         type="button"
         disabled={busy}
-        onClick={() => fileInputRef.current?.click()}
-        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50"
+        onClick={() => galleryInputRef.current?.click()}
+        className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-blue-400 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <Upload className="h-3.5 w-3.5" aria-hidden />
-        Upload a photo instead
+        <ImageIcon className="h-4 w-4" aria-hidden />
+        Upload from Gallery
       </button>
 
+      {/* Camera: `capture` asks the OS for the rear camera. */}
       <input
         ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
-        onChange={(e) => void handleFile(e)}
+        onChange={(e) => void handleImageUpload(e)}
         className="sr-file"
         tabIndex={-1}
         aria-hidden
       />
+      {/* Gallery: no `capture`, so the OS offers the photo library. */}
       <input
-        ref={fileInputRef}
+        ref={galleryInputRef}
         type="file"
         accept="image/*"
-        onChange={(e) => void handleFile(e)}
+        onChange={(e) => void handleImageUpload(e)}
         className="sr-file"
         tabIndex={-1}
         aria-hidden
