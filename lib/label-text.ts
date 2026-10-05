@@ -96,7 +96,19 @@ export interface ReadQuality {
 export function assessRead(
   parsed: Pick<ParsedLabel, "derivedFrom" | "ingredients">,
   confidence: number,
+  /** Restricted substances recognised anywhere in the raw OCR text. */
+  knownRestrictedCount = 0,
 ): ReadQuality {
+  // A substance on the Prohibited List was named in the text we read. That is
+  // positive evidence, and the engine will reach the same verdict a model
+  // would, so there is nothing to gain by spending a model call. Note the
+  // asymmetry: recognising a RESTRICTED substance settles the question;
+  // recognising only permitted ones never could, because OCR may have dropped
+  // the ingredient that mattered.
+  if (knownRestrictedCount > 0) {
+    return { strong: true, reason: "a listed substance was recognised" };
+  }
+
   const count = parsed.ingredients.length;
   if (count === 0) {
     return { strong: false, reason: "nothing readable was found on the label" };

@@ -75,7 +75,20 @@ confirm or correct before anything is judged. That keeps the common case free,
 offline and private — the image never leaves the device — and it puts a human
 between imperfect OCR and a safety-critical verdict.
 
-**The AI scan is reached for only when the on-device read is weak.** A proper
+**The text is checked against the WADA list on the device first.** The reference
+data ships with the app, so if a prohibited or restricted substance is named
+anywhere in what was read — including the product title or the brackets after a
+brand — it is recognised immediately, and no model is involved at all. A generic
+`Frusemide Tablets I.P. 40 mg` resolves to 🔴 PROHIBITED in about 5 seconds,
+offline and free.
+
+Note the asymmetry: recognising a *restricted* substance settles the question,
+because it is positive evidence. Recognising only permitted ones never could —
+OCR may have dropped the ingredient that mattered — so the permitted list is
+deliberately not used to short-circuit anything.
+
+**The AI scan is reached for only when nothing is recognised and the read is
+structurally weak.** A proper
 ingredients panel or an inline list of two or more substances is trustworthy
 evidence, so it is used as-is: free, instant, nothing uploaded. But when the
 molecule could only be inferred from a brand's brackets (`LAMADOL (Tramadol
@@ -84,11 +97,11 @@ mg`), no ingredients panel was found at all — which is exactly where an
 ingredient gets missed, and a missed ingredient reads as a clean product. Those
 escalate automatically, and you can always ask for an AI scan yourself.
 
-| Label | On-device read | Escalates? |
+| Label | Outcome | Escalates? |
 | --- | --- | --- |
+| A listed substance is recognised anywhere in the text | settled on device | no |
 | Ingredients panel, or inline list of 2+ | trusted | no |
-| Molecule only in brackets | weak | yes |
-| Molecule only in the title | weak | yes |
+| Nothing recognised, and no ingredients panel | weak | yes |
 | Nothing readable | weak | yes |
 
 - The vision model is an **OCR engine only**. It is never asked whether something
@@ -227,6 +240,7 @@ lib/
   rules-engine.ts       Deterministic evaluation — the heart of the app
   local-ocr.ts          On-device label reading (Tesseract, dynamic import)
   label-text.ts         Parses OCR text into candidate ingredients
+  substance-match.ts    Shared WADA name matching, used on device and server
   extraction-cache.ts   Image-hash cache + single-flight, to spare quota
   rate-limit.ts         Per-client and global caps on the AI scan path
   vision.ts             AI fallback across Gemini and OpenRouter

@@ -20,55 +20,17 @@ import type {
   WadaSubstanceRule,
 } from "@/types";
 import { STATUS_TIERS } from "@/types";
+import {
+  containsTerm,
+  normalizeTerm as normalize,
+  stripDose,
+} from "@/lib/substance-match";
 
 const DB = rulesData as WadaRulesDatabase;
 
 export const rulesVersion = DB.version;
 export const listEdition = DB.listEdition;
 export const inCompetitionWindowHours = DB.inCompetitionWindowHours;
-
-/* ------------------------------------------------------------------ *
- * Normalisation
- * ------------------------------------------------------------------ */
-
-/**
- * Collapse a label string to a comparable form: lowercase, punctuation to
- * spaces, single-spaced. Keeps digits because some substance names need them
- * (LGD-4033, GW501516).
- */
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[‐-―]/g, "-") // unicode dashes -> hyphen
-    .replace(/[^a-z0-9+-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** Strip trailing dose/strength noise so "ibuprofen 200 mg" matches "ibuprofen". */
-function stripDose(value: string): string {
-  return value
-    .replace(
-      /\b\d+(?:[.,]\d+)?\s*(?:mg|mcg|µg|ug|g|ml|iu|%|mg\/ml|ng\/ml)\b/g,
-      " ",
-    )
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/** True when `needle` occurs in `haystack` on word boundaries. */
-function containsTerm(haystack: string, needle: string): boolean {
-  if (!needle) return false;
-  const index = haystack.indexOf(needle);
-  if (index === -1) return false;
-
-  const before = index === 0 ? " " : haystack[index - 1];
-  const afterIndex = index + needle.length;
-  const after = afterIndex >= haystack.length ? " " : haystack[afterIndex];
-  const isBoundary = (char: string) => !/[a-z0-9]/.test(char);
-
-  return isBoundary(before) && isBoundary(after);
-}
 
 /* ------------------------------------------------------------------ *
  * Matching

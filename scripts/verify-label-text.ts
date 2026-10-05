@@ -3,6 +3,7 @@
  * Each case is a label that previously parsed wrongly.
  */
 import { assessRead, parseLabelText } from "../lib/label-text";
+import { findRestrictedSubstances } from "../lib/substance-match";
 import { evaluateLabel } from "../lib/rules-engine";
 import { DEFAULT_PROFILE } from "../lib/storage";
 import type { SafetyStatus } from "../types";
@@ -40,6 +41,12 @@ Nasal decongestant
 INACTIVE INGREDIENTS
 Croscarmellose Sodium, Magnesium Stearate
 Keep out of reach of children.`, "CONDITIONAL"],
+  // Nothing recognisable and no list: this must still reach a model, or the
+  // AI fallback would be unreachable and a hard label would silently fail.
+  ["Unreadable pack (must escalate)", `BW ~~ ,, .
+Zz |  ~~
+~~ wl
+0 ae`, "UNVERIFIED"],
 ];
 
 let failures = 0;
@@ -62,10 +69,12 @@ console.log("\n--- escalation policy (which reads get sent to a model) ---");
 for (const [label, text] of CASES.map((c) => [c[0], c[1]] as const)) {
   const parsed = parseLabelText(text);
   // Confidence from the real Tesseract runs on these images.
-  const conf = label.startsWith("Frusemide") ? 55 : label.startsWith("Lamadol") ? 44 : 77;
-  const q = assessRead(parsed, conf);
+  const conf = label.startsWith("Frusemide") ? 55 : label.startsWith("Lamadol") ? 44 : label.startsWith("Unreadable") ? 20 : 77;
+  const hits = findRestrictedSubstances(text);
+  const q = assessRead(parsed, conf, hits.length);
+  const named = hits.map((h) => `${h.substance} [${h.wadaClass}]`).join(", ") || "none";
   console.log(
-    `   ${(q.strong ? "keep local " : "ESCALATE   ").padEnd(12)} ${label.padEnd(42)} ${parsed.derivedFrom} (${q.reason})`,
+    `   ${(q.strong ? "keep local " : "ESCALATE   ").padEnd(12)} ${label.padEnd(42)} recognised: ${named}`,
   );
 }
 

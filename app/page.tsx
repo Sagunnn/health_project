@@ -163,7 +163,11 @@ export default function Home() {
       try {
         const ocr = await readLabelLocally(dataUrl, setOcrProgress);
         setOcrProgress(null);
-        const quality = assessRead(ocr, ocr.confidence);
+        const quality = assessRead(
+          ocr,
+          ocr.confidence,
+          ocr.knownSubstances.length,
+        );
 
         // A weak read is exactly where an ingredient gets missed, and a
         // missed ingredient reads as a clean product. Spend a model call
@@ -290,6 +294,7 @@ export default function Home() {
               ocrText={review?.text}
               ocrConfidence={review?.confidence}
               derivedFrom={review?.derivedFrom}
+              knownSubstances={review?.knownSubstances}
               onUseAi={review ? () => scanWithAi(review.dataUrl) : undefined}
             />
 

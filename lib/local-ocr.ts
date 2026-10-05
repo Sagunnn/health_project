@@ -16,8 +16,17 @@
  */
 
 import { parseLabelText, type ParsedLabel } from "@/lib/label-text";
+import {
+  containsTerm,
+  findRestrictedSubstances,
+  normalizeTerm,
+  stripDose,
+  type SubstanceHit,
+} from "@/lib/substance-match";
 
 export interface LocalOcrResult extends ParsedLabel {
+  /** Restricted substances found anywhere in the text, not just the list. */
+  knownSubstances: SubstanceHit[];
   /** Raw recognised text, shown so the athlete can see what was read. */
   text: string;
   /** Tesseract's mean confidence, 0–100. */
@@ -55,7 +64,8 @@ async function preprocess(dataUrl: string): Promise<string> {
   let max = 0;
   const grey = new Uint8ClampedArray(data.length / 4);
   for (let i = 0, p = 0; i < data.length; i += 4, p++) {
-    const v = (data[i]! * 0.299 + data[i + 1]! * 0.587 + data[i + 2]! * 0.114) | 0;
+    const v =
+      (data[i]! * 0.299 + data[i + 1]! * 0.587 + data[i + 2]! * 0.114) | 0;
     grey[p] = v;
     if (v < min) min = v;
     if (v > max) max = v;
@@ -94,10 +104,31 @@ export async function readLabelLocally(
 
   try {
     const { data } = await worker.recognize(source);
-    const parsed = parseLabelText(data.text ?? "");
+    const text = data.text ?? "";
+    const parsed = parseLabelText(text);
+
+    // Check the WHOLE text against the reference data, not just the parsed
+    // list: generic packs name the molecule in the title and brand packs put
+    // it in brackets, neither of which an ingredients-panel parser reaches.
+    const knownSubstances = findRestrictedSubstances(text);
+
+    // If a recognised substance is not already represented in the proposed
+    // ingredients, add it — otherwise a parse that produced only noise would
+    // hide a substance we had positively identified.
+    const ingredients = [...parsed.ingredients];
+    for (const hit of knownSubstances) {
+      const needle = normalizeTerm(hit.alias);
+      const present = ingredients.some((item) =>
+        containsTerm(stripDose(normalizeTerm(item)), needle),
+      );
+      if (!present) ingredients.push(hit.substance);
+    }
+
     return {
       ...parsed,
-      text: data.text ?? "",
+      ingredients,
+      knownSubstances,
+      text,
       confidence: data.confidence ?? 0,
       durationMs: Date.now() - startedAt,
     };

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Keyboard, Search, Sparkles } from "lucide-react";
 import type { IngredientSource } from "@/lib/label-text";
+import type { SubstanceHit } from "@/lib/substance-match";
 import type { AdministrationRoute, ExtractedLabel } from "@/types";
 
 interface ManualEntryProps {
@@ -22,6 +23,8 @@ interface ManualEntryProps {
   ocrConfidence?: number;
   /** How the ingredient list was derived, so a guess can be flagged. */
   derivedFrom?: IngredientSource;
+  /** Restricted substances matched directly against the WADA reference data. */
+  knownSubstances?: SubstanceHit[];
   /** Escalate this image to the Vision model instead. */
   onUseAi?: () => void;
 }
@@ -57,6 +60,7 @@ export default function ManualEntry({
   ocrText,
   ocrConfidence,
   derivedFrom,
+  knownSubstances,
   onUseAi,
 }: ManualEntryProps) {
   const isReview = Boolean(ocrText);
@@ -135,18 +139,30 @@ export default function ManualEntry({
             Phone cameras miss small print, and a missed ingredient is the one
             that matters.
           </p>
-          {(derivedFrom === "product-name" ||
-            derivedFrom === "parentheses") && (
-            <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+          {knownSubstances && knownSubstances.length > 0 && (
+            <p className="mt-2 rounded border border-blue-300 bg-white px-2 py-1.5 text-[11px] text-blue-900">
               <span className="font-semibold">
-                No ingredients panel was found on this pack.
+                Matched against the WADA list on your device:
               </span>{" "}
-              {derivedFrom === "product-name"
-                ? "The line below is the product title, which on generic packs is also the substance name."
-                : "The line below came from the brackets after the brand name."}{" "}
-              Add anything else printed on the box before continuing.
+              {knownSubstances
+                .map((h) => `${h.substance} (${h.wadaClass})`)
+                .join(", ")}
+              . No AI scan was needed.
             </p>
           )}
+          {(!knownSubstances || knownSubstances.length === 0) &&
+            (derivedFrom === "product-name" ||
+              derivedFrom === "parentheses") && (
+              <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+                <span className="font-semibold">
+                  No ingredients panel was found on this pack.
+                </span>{" "}
+                {derivedFrom === "product-name"
+                  ? "The line below is the product title, which on generic packs is also the substance name."
+                  : "The line below came from the brackets after the brand name."}{" "}
+                Add anything else printed on the box before continuing.
+              </p>
+            )}
           {derivedFrom === "none" && (
             <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
               <span className="font-semibold">
