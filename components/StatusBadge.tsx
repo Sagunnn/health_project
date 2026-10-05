@@ -19,7 +19,7 @@ export default function StatusBadge({
   if (size === "compact") {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold ${style.badge}`}
+        className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-xs font-semibold ${style.badge}`}
       >
         <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
         {tier.label}
@@ -29,15 +29,15 @@ export default function StatusBadge({
 
   return (
     <div
-      className={`flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3 ${style.badge}`}
+      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 backdrop-blur-sm ${style.badge} ${style.glow}`}
     >
-      <Icon className="h-8 w-8 shrink-0" aria-hidden />
+      <Icon className="h-9 w-9 shrink-0" aria-hidden />
       <div className="min-w-0">
-        <p className="text-lg font-bold uppercase leading-tight tracking-wide">
+        <p className="text-xl font-bold uppercase leading-tight tracking-[0.06em]">
           {tier.label}
         </p>
-        <p className="text-xs font-medium opacity-80">
-          {style.emoji} WADA {tier.status.replace(/_/g, " ").toLowerCase()}
+        <p className="label-caps mt-0.5 opacity-70">
+          WADA {tier.status.replace(/_/g, " ").toLowerCase()}
         </p>
       </div>
     </div>

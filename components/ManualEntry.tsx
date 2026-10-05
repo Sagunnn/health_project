@@ -41,7 +41,7 @@ const ROUTES: Array<{ value: AdministrationRoute; label: string }> = [
 ];
 
 const inputClass =
-  "w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-400/40";
 
 /**
  * Type a product's ingredients instead of photographing it.
@@ -102,7 +102,7 @@ export default function ManualEntry({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mx-auto flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700"
+        className="mx-auto flex items-center gap-1.5 text-xs font-medium text-cyan-300 hover:text-cyan-200"
       >
         <Keyboard className="h-3.5 w-3.5" aria-hidden />
         Type ingredients instead
@@ -111,26 +111,23 @@ export default function ManualEntry({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
-    >
+    <form onSubmit={handleSubmit} className="panel p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-900">
+        <h2 className="text-sm font-semibold text-slate-100">
           {isReview ? "Check what we read" : "Enter ingredients"}
         </h2>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs font-medium text-slate-500 hover:text-slate-700"
+          className="text-xs font-medium text-slate-500 hover:text-slate-300"
         >
           Cancel
         </button>
       </div>
 
       {isReview && (
-        <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
-          <p className="text-xs text-blue-900">
+        <div className="mb-3 rounded-xl border border-cyan-400/30 bg-cyan-400/[0.07] px-3 py-2">
+          <p className="text-xs text-cyan-100">
             Read on your device — no internet needed, and it uses none of your
             scan allowance.{" "}
             <span className="font-semibold">
@@ -140,7 +137,7 @@ export default function ManualEntry({
             that matters.
           </p>
           {knownSubstances && knownSubstances.length > 0 && (
-            <p className="mt-2 rounded border border-blue-300 bg-white px-2 py-1.5 text-[11px] text-blue-900">
+            <p className="mt-2 rounded border border-cyan-400/40 bg-cyan-400/10 px-2 py-1.5 text-[11px] text-cyan-100">
               <span className="font-semibold">
                 Matched against the WADA list on your device:
               </span>{" "}
@@ -153,7 +150,7 @@ export default function ManualEntry({
           {(!knownSubstances || knownSubstances.length === 0) &&
             (derivedFrom === "product-name" ||
               derivedFrom === "parentheses") && (
-              <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+              <p className="mt-2 rounded-lg border border-amber-400/40 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-100">
                 <span className="font-semibold">
                   No ingredients panel was found on this pack.
                 </span>{" "}
@@ -164,7 +161,7 @@ export default function ManualEntry({
               </p>
             )}
           {derivedFrom === "none" && (
-            <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+            <p className="mt-2 rounded-lg border border-amber-400/40 bg-amber-500/10 px-2 py-1.5 text-[11px] text-amber-100">
               <span className="font-semibold">
                 No ingredients could be made out.
               </span>{" "}
@@ -172,7 +169,7 @@ export default function ManualEntry({
             </p>
           )}
           {typeof ocrConfidence === "number" && (
-            <p className="mt-1 text-[11px] text-blue-700">
+            <p className="mt-1 text-[11px] text-cyan-300/80">
               Reading confidence {Math.round(ocrConfidence)}%
               {ocrConfidence < 70 ? " — low, please read carefully." : ""}
             </p>
@@ -182,7 +179,7 @@ export default function ManualEntry({
 
       <label
         htmlFor="manual-product"
-        className="mb-1.5 block text-xs font-medium text-slate-700"
+        className="mb-1.5 block text-xs font-medium text-slate-300"
       >
         Product name (optional)
       </label>
@@ -197,7 +194,7 @@ export default function ManualEntry({
 
       <label
         htmlFor="manual-ingredients"
-        className="mb-1.5 block text-xs font-medium text-slate-700"
+        className="mb-1.5 block text-xs font-medium text-slate-300"
       >
         Active ingredients
       </label>
@@ -211,7 +208,7 @@ export default function ManualEntry({
         }
         className={`${inputClass} mb-1 resize-y`}
       />
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-slate-400">
         {ingredients.length === 0
           ? "Copy the active ingredients from the packaging."
           : `${ingredients.length} ingredient${ingredients.length === 1 ? "" : "s"} detected.`}
@@ -219,7 +216,7 @@ export default function ManualEntry({
 
       <label
         htmlFor="manual-route"
-        className="mb-1.5 block text-xs font-medium text-slate-700"
+        className="mb-1.5 block text-xs font-medium text-slate-300"
       >
         How is it taken?
       </label>
@@ -235,7 +232,7 @@ export default function ManualEntry({
           </option>
         ))}
       </select>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-slate-400">
         Route changes the result for some substances — an inhaled steroid is
         treated differently from an injected one.
       </p>
@@ -245,9 +242,9 @@ export default function ManualEntry({
           type="checkbox"
           checked={isSupplement}
           onChange={(e) => setIsSupplement(e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+          className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/10 text-cyan-400 focus:ring-2 focus:ring-cyan-400/40"
         />
-        <span className="text-xs text-slate-700">
+        <span className="text-xs text-slate-300">
           This is a dietary supplement, not a licensed medicine
         </span>
       </label>
@@ -257,12 +254,12 @@ export default function ManualEntry({
           <button
             type="button"
             onClick={() => setShowRaw((v) => !v)}
-            className="text-xs font-medium text-blue-600 hover:text-blue-700"
+            className="text-xs font-medium text-cyan-300 hover:text-cyan-200"
           >
             {showRaw ? "Hide" : "Show"} everything we read from the label
           </button>
           {showRaw && (
-            <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-100 p-2 text-[11px] leading-snug text-slate-600">
+            <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-black/40 p-2 text-[11px] leading-snug text-slate-400">
               {ocrText}
             </pre>
           )}
@@ -272,7 +269,7 @@ export default function ManualEntry({
       <button
         type="submit"
         disabled={!canSubmit}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-sky-400 to-blue-600 px-4 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_24px_-6px_rgba(56,189,248,0.8)] transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Search className="h-4 w-4" aria-hidden />
         Check against WADA list
@@ -283,7 +280,7 @@ export default function ManualEntry({
           type="button"
           onClick={onUseAi}
           disabled={disabled}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-blue-400 hover:text-blue-700 disabled:opacity-50"
+          className="mt-2 flex w-full items-center justify-center gap-2 panel panel-hover px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors disabled:opacity-50"
         >
           <Sparkles className="h-4 w-4" aria-hidden />
           Couldn&apos;t read it? Use AI scan

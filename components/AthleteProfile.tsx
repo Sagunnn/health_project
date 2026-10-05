@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Calendar } from "lucide-react";
-import {
-  NADO_OTHER,
-  findNado,
-  isKnownNado,
-  nadosByRegion,
-} from "@/lib/nados";
+import { NADO_OTHER, findNado, isKnownNado, nadosByRegion } from "@/lib/nados";
 import type { AthleteProfile as AthleteProfileType } from "@/types";
 
 interface AthleteProfileProps {
@@ -24,9 +19,9 @@ const LEVELS = [
 ];
 
 const inputClass =
-  "w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500";
+  "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-cyan-400/60 focus:outline-none focus:ring-2 focus:ring-cyan-400/40";
 
-const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
+const labelClass = "mb-1.5 block text-sm font-medium text-slate-300";
 
 /** Athlete context form — DESIGN.md §3/§4. Drives the engine's timing rules. */
 export default function AthleteProfile({
@@ -94,7 +89,7 @@ export default function AthleteProfile({
           placeholder="e.g. Athletics, Archery, Swimming"
           className={inputClass}
         />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-slate-400">
           Some substances are prohibited only in specific sports, so this
           changes your result.
         </p>
@@ -152,7 +147,7 @@ export default function AthleteProfile({
             aria-hidden
           />
         </div>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-slate-400">
           Within 48 hours of this date, in-competition rules apply and some
           results escalate to prohibited.
         </p>
@@ -201,25 +196,25 @@ export default function AthleteProfile({
           />
         )}
 
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-slate-400">
           {!nadoIsOther && findNado(draft.nado)
             ? findNado(draft.nado)?.name
             : "Used when a result tells you who to contact before using a product."}
         </p>
       </div>
 
-      <label className="flex items-start gap-3 rounded-lg border border-slate-300 bg-white px-3 py-3">
+      <label className="flex items-start gap-3 panel px-3 py-3">
         <input
           type="checkbox"
           checked={draft.hasApprovedTue}
           onChange={(e) => update("hasApprovedTue", e.target.checked)}
-          className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+          className="mt-0.5 h-4 w-4 rounded border-white/20 bg-white/10 text-cyan-400 focus:ring-2 focus:ring-cyan-400/40"
         />
         <span>
-          <span className="block text-sm font-medium text-slate-700">
+          <span className="block text-sm font-medium text-slate-300">
             I hold an approved TUE
           </span>
-          <span className="block text-xs text-slate-500">
+          <span className="block text-xs text-slate-400">
             Results are never downgraded on this basis — you remain strictly
             liable. It only adds a reminder to verify your exemption covers the
             exact substance, dose, and route.
@@ -229,7 +224,7 @@ export default function AthleteProfile({
 
       <button
         type="submit"
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98]"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-sky-400 to-blue-600 px-4 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_24px_-6px_rgba(56,189,248,0.8)] transition-all hover:brightness-110 active:scale-[0.98]"
       >
         {justSaved ? (
           <>

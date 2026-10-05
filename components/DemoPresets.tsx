@@ -21,11 +21,11 @@ export default function DemoPresets({ onSelect, disabled }: DemoPresetsProps) {
     <section aria-labelledby="demo-presets-heading">
       <h2
         id="demo-presets-heading"
-        className="mb-1 text-sm font-semibold text-slate-700"
+        className="label-caps mb-1 text-cyan-300/90"
       >
         Demo presets
       </h2>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-dimmer">
         One tap per status tier — no packaging or API key required.
       </p>
 
@@ -38,22 +38,28 @@ export default function DemoPresets({ onSelect, disabled }: DemoPresetsProps) {
                 type="button"
                 disabled={disabled}
                 onClick={() => onSelect(preset)}
-                className="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 text-left shadow-sm transition-all hover:border-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="panel panel-hover flex w-full items-center gap-3 p-3 text-left disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <span
-                  aria-hidden
-                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${style.dot}`}
-                />
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span
+                    aria-hidden
+                    className={`absolute inline-flex h-full w-full rounded-full opacity-60 blur-[3px] ${style.dot}`}
+                  />
+                  <span
+                    aria-hidden
+                    className={`relative inline-flex h-2.5 w-2.5 rounded-full ${style.dot}`}
+                  />
+                </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-slate-900">
+                  <span className="block truncate text-sm font-semibold text-slate-100">
                     {preset.label}
                   </span>
-                  <span className="block truncate text-xs text-slate-500">
+                  <span className="block truncate text-xs text-dim">
                     {preset.caption}
                   </span>
                 </span>
                 <ChevronRight
-                  className="h-4 w-4 shrink-0 text-slate-400"
+                  className="h-4 w-4 shrink-0 text-slate-600"
                   aria-hidden
                 />
               </button>

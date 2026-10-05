@@ -25,6 +25,8 @@ const config: Config = {
       },
       animation: {
         "fade-up": "fade-up 0.2s ease-out both",
+        sweep: "sweep 2.2s ease-in-out infinite",
+        halo: "halo 2.6s ease-in-out infinite",
       },
     },
   },

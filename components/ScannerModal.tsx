@@ -34,9 +34,7 @@ export default function ScannerModal({
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isPreparing, setIsPreparing] = useState(false);
 
-  async function handleImageUpload(
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     // Reset so picking the same file twice still fires a change event.
     event.target.value = "";
@@ -70,30 +68,50 @@ export default function ScannerModal({
   return (
     <div className="flex flex-col items-center">
       {/* Primary: Take Photo */}
-      <div className="relative flex h-32 w-32 items-center justify-center">
-        {isScanning && (
-          <span
-            aria-hidden
-            className="absolute inset-0 animate-ping rounded-full bg-blue-400 opacity-60"
-          />
-        )}
+      <div className="relative flex h-40 w-40 items-center justify-center">
+        {/* Outer halo — always present, livelier while working. */}
+        <span
+          aria-hidden
+          className={`absolute inset-0 rounded-full bg-cyan-400/20 blur-xl ${
+            busy ? "animate-halo" : ""
+          }`}
+        />
+        {/* Targeting ring */}
+        <span
+          aria-hidden
+          className={`absolute inset-2 rounded-full border border-cyan-300/40 ${
+            isScanning ? "animate-ping" : ""
+          }`}
+        />
+        <span
+          aria-hidden
+          className="absolute inset-5 rounded-full border border-dashed border-cyan-200/25"
+        />
+
         <button
           type="button"
           disabled={busy}
           onClick={() => cameraInputRef.current?.click()}
           aria-label="Take a photo of a product label"
-          className="relative flex h-32 w-32 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-all active:scale-95 disabled:opacity-70"
+          className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-sky-400 to-blue-600 text-slate-950 shadow-[0_0_40px_-6px_rgba(56,189,248,0.85)] transition-all active:scale-95 disabled:opacity-80"
         >
+          {/* Scanline sweeping the lens while a read is in flight. */}
+          {busy && (
+            <span
+              aria-hidden
+              className="absolute inset-x-0 h-1/3 animate-sweep bg-gradient-to-b from-transparent via-white/70 to-transparent"
+            />
+          )}
           {busy ? (
-            <Loader2 className="h-12 w-12 animate-spin" aria-hidden />
+            <Loader2 className="h-11 w-11 animate-spin" aria-hidden />
           ) : (
-            <Camera className="h-12 w-12" aria-hidden />
+            <Camera className="h-11 w-11" aria-hidden />
           )}
         </button>
       </div>
 
       <p
-        className="mt-3 text-sm font-semibold text-slate-800"
+        className="mt-3 text-base font-semibold tracking-tight text-slate-100"
         aria-live="polite"
       >
         {isPreparing
@@ -102,7 +120,7 @@ export default function ScannerModal({
             ? "AI scanning label…"
             : "Take Photo"}
       </p>
-      <p className="mt-0.5 h-4 text-xs text-slate-500">
+      <p className="mt-0.5 h-4 text-xs text-dim">
         {isScanning
           ? "Reading the ingredients, this can take a few seconds."
           : isPreparing
@@ -115,9 +133,9 @@ export default function ScannerModal({
         type="button"
         disabled={busy}
         onClick={() => galleryInputRef.current?.click()}
-        className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-blue-400 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="panel panel-hover mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <ImageIcon className="h-4 w-4" aria-hidden />
+        <ImageIcon className="h-4 w-4 text-cyan-300" aria-hidden />
         Upload from Gallery
       </button>
 

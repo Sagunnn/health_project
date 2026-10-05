@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#2563eb",
+  themeColor: "#04070e",
 };
 
 export default function RootLayout({
@@ -29,8 +29,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans">
-        {/* Mobile-constraint shell — DESIGN.md §2 */}
-        <div className="relative mx-auto min-h-screen max-w-md bg-slate-50 pb-20 shadow-2xl">
+        {/* Mobile-constraint shell, lit like an instrument panel. */}
+        <div className="cockpit-shell relative mx-auto min-h-screen max-w-md overflow-hidden pb-24 shadow-[0_0_80px_-20px_rgba(56,189,248,0.35)]">
           {children}
         </div>
       </body>

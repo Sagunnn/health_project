@@ -13,7 +13,8 @@
     "verify:guards": "tsx scripts/verify-guards.ts",
     "verify:vision": "tsx scripts/verify-vision.ts",
     "verify:label": "tsx scripts/verify-label-text.ts",
-    "verify:coverage": "tsx scripts/verify-coverage.ts"
+    "verify:coverage": "tsx scripts/verify-coverage.ts",
+    "verify:styles": "node scripts/verify-styles.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",

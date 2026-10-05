@@ -5,21 +5,74 @@
 @layer base {
   :root {
     --font-sans: ui-sans-serif, system-ui, sans-serif;
+
+    /* Cockpit surfaces. Kept as tokens so a future light mode only has to
+       redefine these, not every component. */
+    --surface-void: #04070e; /* behind the device shell */
+    --surface-deep: #0a1020; /* the shell itself */
+    --surface-panel: 255 255 255 / 0.045; /* glass fill */
+    --surface-edge: 255 255 255 / 0.1; /* glass hairline */
+    --accent: 56 189 248; /* cyan-400, interactive */
+    --accent-deep: 37 99 235; /* blue-600, pressed/solid */
   }
 
   html {
     -webkit-text-size-adjust: 100%;
   }
 
-  /* The page behind the mobile shell is darker so the shell reads as a
-     device frame on desktop, per DESIGN.md §2. */
   body {
-    @apply bg-slate-200 text-slate-900 antialiased;
+    background: var(--surface-void);
+    @apply text-slate-100 antialiased;
   }
 
   button,
   [role="button"] {
     touch-action: manipulation;
+  }
+
+  /* Dark surfaces make the native date/select glyphs invisible. */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.55;
+  }
+}
+
+@layer components {
+  /* The shell reads as a device: a faint horizon glow at the top, so the
+     screen looks lit rather than merely dark. */
+  .cockpit-shell {
+    background:
+      radial-gradient(
+        120% 60% at 50% -10%,
+        rgb(var(--accent) / 0.16) 0%,
+        transparent 60%
+      ),
+      var(--surface-deep);
+  }
+
+  /* Frosted panel. Used for every card, so depth is consistent. */
+  .panel {
+    background: rgb(var(--surface-panel));
+    border: 1px solid rgb(var(--surface-edge));
+    @apply rounded-2xl backdrop-blur-xl;
+  }
+
+  .panel-hover {
+    @apply transition-all duration-200;
+  }
+  .panel-hover:hover {
+    border-color: rgb(var(--accent) / 0.45);
+    background: rgb(var(--accent) / 0.07);
+  }
+
+  /* Hairline above the bottom bar, brightest in the middle. */
+  .edge-top {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgb(var(--accent) / 0.35),
+      transparent
+    );
   }
 }
 
@@ -27,5 +80,58 @@
   /* Hide the native file input without removing it from the a11y tree. */
   .sr-file {
     @apply absolute h-0 w-0 overflow-hidden opacity-0;
+  }
+
+  .text-dim {
+    @apply text-slate-400;
+  }
+  /* slate-400, not slate-500: at 12px the latter measures 3.98:1 on the
+     shell, under the 4.5:1 WCAG AA floor for small text. */
+  .text-dimmer {
+    @apply text-slate-400;
+  }
+
+  /* Tracking used for the small uppercase labels that give the cockpit feel. */
+  .label-caps {
+    @apply text-[10px] font-semibold uppercase tracking-[0.14em];
+  }
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110%);
+    opacity: 0;
+  }
+}
+
+@keyframes halo {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

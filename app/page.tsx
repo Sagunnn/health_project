@@ -237,14 +237,14 @@ export default function Home() {
       <main className="px-4 pt-6">
         {/* Header — DESIGN.md §4 */}
         <header className="mb-6 flex items-center gap-3">
-          <span className="rounded-xl bg-blue-600 p-2 text-white">
+          <span className="rounded-2xl bg-gradient-to-b from-sky-400 to-blue-600 p-2 text-slate-950 shadow-[0_0_22px_-4px_rgba(56,189,248,0.9)]">
             <ShieldCheck className="h-6 w-6" aria-hidden />
           </span>
           <div>
-            <h1 className="text-xl font-bold leading-tight tracking-tight text-slate-900">
+            <h1 className="text-xl font-bold leading-tight tracking-tight text-slate-100">
               BESAFE by AIMS
             </h1>
-            <p className="text-sm text-slate-500">Know before you take it.</p>
+            <p className="text-sm text-dim">Know before you take it.</p>
           </div>
         </header>
 
@@ -258,7 +258,7 @@ export default function Home() {
             </div>
 
             {escalating !== null && (
-              <p className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-900">
+              <p className="flex items-start gap-2 rounded-xl border border-cyan-400/35 bg-cyan-400/10 px-3 py-2.5 text-sm text-cyan-100">
                 <Loader2
                   className="mt-0.5 h-4 w-4 shrink-0 animate-spin"
                   aria-hidden
@@ -271,7 +271,7 @@ export default function Home() {
             )}
 
             {ocrProgress !== null && escalating === null && (
-              <p className="flex items-center justify-center gap-2 text-sm font-medium text-slate-600">
+              <p className="flex items-center justify-center gap-2 text-sm font-medium text-slate-400">
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 Reading the label on your device…{" "}
                 {Math.round(ocrProgress * 100)}%
@@ -299,7 +299,7 @@ export default function Home() {
             />
 
             {error && (
-              <p className="flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <p className="flex items-start gap-2 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-sm text-red-200">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 {error}
               </p>
@@ -310,7 +310,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setTab("profile")}
-                className="w-full rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-left text-xs text-amber-900 transition-colors hover:border-amber-400"
+                className="w-full rounded-xl border border-amber-400/35 bg-amber-500/10 px-3 py-2.5 text-left text-xs text-amber-100 transition-colors hover:border-amber-300/60"
               >
                 <span className="font-semibold">No competition date set.</span>{" "}
                 Results are assessed out-of-competition. Tap to add your event
@@ -326,11 +326,11 @@ export default function Home() {
           <section aria-labelledby="passport-heading">
             <h2
               id="passport-heading"
-              className="mb-1 text-sm font-semibold text-slate-700"
+              className="label-caps mb-1 text-cyan-300/90"
             >
               Athlete Passport
             </h2>
-            <p className="mb-4 text-xs text-slate-500">
+            <p className="mb-4 text-xs text-dimmer">
               {passport.length} saved {passport.length === 1 ? "scan" : "scans"}{" "}
               · stored on this device only
             </p>
@@ -346,11 +346,11 @@ export default function Home() {
           <section aria-labelledby="profile-heading">
             <h2
               id="profile-heading"
-              className="mb-1 text-sm font-semibold text-slate-700"
+              className="label-caps mb-1 text-cyan-300/90"
             >
               Athlete profile
             </h2>
-            <p className="mb-4 text-xs text-slate-500">
+            <p className="mb-4 text-xs text-dimmer">
               Your sport and competition date change how substances are
               assessed.
             </p>
@@ -361,7 +361,7 @@ export default function Home() {
 
       {/* Result modal overlay */}
       {result && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/50 p-3 sm:items-center">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-[#04070e]/80 p-3 backdrop-blur-sm sm:items-center">
           <div className="w-full max-w-md animate-fade-up">
             <ResultCard
               result={result}

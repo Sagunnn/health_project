@@ -32,32 +32,45 @@ export default function BottomNav({
   return (
     <nav
       aria-label="Main navigation"
-      className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-md -translate-x-1/2 justify-around border-t border-slate-200 bg-white px-2 py-3"
+      className="fixed bottom-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 border-t border-white/10 bg-[#070c17]/85 px-2 py-3 backdrop-blur-xl"
     >
-      {TABS.map(({ id, label, icon: Icon }) => {
-        const isActive = active === id;
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onChange(id)}
-            aria-current={isActive ? "page" : undefined}
-            className={`relative flex flex-1 flex-col items-center gap-1 rounded-lg py-1 text-xs font-medium transition-colors ${
-              isActive
-                ? "text-blue-600"
-                : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            <Icon className="h-6 w-6" aria-hidden />
-            {label}
-            {id === "passport" && passportCount > 0 && (
-              <span className="absolute right-1/2 top-0 translate-x-5 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
-                {passportCount}
-              </span>
-            )}
-          </button>
-        );
-      })}
+      {/* Luminous hairline, brightest at the centre. */}
+      <span aria-hidden className="edge-top absolute inset-x-0 top-0 h-px" />
+      <div className="flex justify-around">
+        {TABS.map(({ id, label, icon: Icon }) => {
+          const isActive = active === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onChange(id)}
+              aria-current={isActive ? "page" : undefined}
+              className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl py-1 text-xs font-medium transition-colors ${
+                isActive
+                  ? "text-cyan-300"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              {isActive && (
+                <span
+                  aria-hidden
+                  className="absolute -top-px h-px w-10 bg-cyan-300 shadow-[0_0_10px_2px_rgba(103,232,249,0.9)]"
+                />
+              )}
+              <Icon
+                className={`h-6 w-6 transition-transform ${isActive ? "scale-110 drop-shadow-[0_0_8px_rgba(103,232,249,0.65)]" : ""}`}
+                aria-hidden
+              />
+              {label}
+              {id === "passport" && passportCount > 0 && (
+                <span className="absolute right-1/2 top-0 translate-x-5 rounded-full bg-cyan-400 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-slate-950 shadow-[0_0_10px_rgba(34,211,238,0.8)]">
+                  {passportCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </nav>
   );
 }

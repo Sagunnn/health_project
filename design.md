@@ -1,25 +1,62 @@
 # UI/UX & Design System Guidelines for BESAFE by AIMS
 
-## 1. The Core Vibe: "Clinical, Clean, Trustworthy"
-Athletes will use this app right before consuming a substance. The UI must be unambiguous, fast, and completely free of clutter. 
+## 1. The Core Vibe: "Cockpit — dark, lit, unambiguous"
+Athletes use this right before swallowing something, often in a shop or a
+corridor. The UI must be unambiguous, fast and free of clutter. The shell is
+dark and softly lit, like an instrument panel: the verdict is the brightest
+thing on screen, and everything else recedes.
+
+Dark is not decoration. The five status colours are the product's entire
+vocabulary, and they read far more urgently as light on dark than as dark on
+light.
 
 ## 2. App Shell (Mobile-First Constraints)
-- **Container:** Wrap the entire application in a mobile-constraint container so it looks like a native iOS/Android app even on desktop. 
-- **Wrapper Classes:** `max-w-md mx-auto min-h-screen bg-slate-50 shadow-2xl relative pb-20`
-- **Navigation:** Implement a fixed bottom navigation bar (`fixed bottom-0 w-full max-w-md bg-white border-t border-gray-200 flex justify-around py-3 px-2 z-50`). 
-- **Icons:** Use Lucide-React icons for the tabs: `ScanLine` (Scanner), `BookOpen` (Passport), `User` (Profile).
+- **Container:** a mobile-constraint shell so it reads as a native app even on
+  desktop — `relative mx-auto min-h-screen max-w-md overflow-hidden pb-24`,
+  with the `.cockpit-shell` horizon glow.
+- **Navigation:** fixed bottom bar, glass over `#070c17`, with a luminous
+  hairline and a glowing marker above the active tab. It is centred with
+  `left-1/2 -translate-x-1/2`; `fixed` + `max-w-md` alone pins it to the
+  viewport's left edge on desktop.
+- **Icons:** Lucide — `ScanLine` (Scanner), `BookOpen` (Passport), `User`
+  (Profile).
 
 ## 3. Color System
-- **Primary Elements:** Interactive elements (buttons, active tabs) must use `blue-600` for a clinical, trustworthy feel.
-- **The 5 Status Outcomes (STRICT):**
-  - **NOT_PROHIBITED (🟢):** `bg-emerald-100 text-emerald-800 border-emerald-500` (Icon: CheckCircle)
-  - **CONDITIONAL (🟡):** `bg-amber-100 text-amber-900 border-amber-500` (Icon: AlertCircle)
-  - **PROHIBITED (🔴):** `bg-red-100 text-red-800 border-red-600 bg-red-50` (Icon: XOctagon)
-  - **SUPPLEMENT_RISK (🟠):** `bg-orange-100 text-orange-900 border-orange-500` (Icon: AlertTriangle)
-  - **UNVERIFIED (⚪):** `bg-slate-200 text-slate-800 border-slate-400` (Icon: HelpCircle)
+- **Surfaces:** `--surface-void` `#04070e` behind the shell, `--surface-deep`
+  `#0a1020` for the shell. Cards use the `.panel` class (white at 4.5% over a
+  10% hairline) so depth is identical everywhere.
+- **Interactive:** cyan-400 for accents and links, a sky-400 → blue-600
+  gradient for primary actions. Never a flat mid-blue — it disappears at this
+  brightness.
+- **The 5 Status Outcomes (STRICT):** the hues are fixed, because they are the
+  semantics. Each tier is a translucent fill, a luminous border, and a bloom.
+  The canonical strings live in `lib/status-styles.ts` and must stay literal so
+  Tailwind's JIT can compile them.
+
+  | Tier | Fill / text / border | Icon |
+  | --- | --- | --- |
+  | NOT_PROHIBITED 🟢 | `bg-emerald-500/15 text-emerald-300 border-emerald-400/60` | `CheckCircle` |
+  | CONDITIONAL 🟡 | `bg-amber-500/15 text-amber-200 border-amber-400/60` | `AlertCircle` |
+  | PROHIBITED 🔴 | `bg-red-500/20 text-red-200 border-red-400/70` | `XOctagon` |
+  | SUPPLEMENT_RISK 🟠 | `bg-orange-500/15 text-orange-200 border-orange-400/60` | `AlertTriangle` |
+  | UNVERIFIED ⚪ | `bg-slate-400/15 text-slate-200 border-slate-400/50` | `HelpCircle` |
 
 ## 4. Component Layouts
-- **The Camera Button:** Make it massive and inviting. Use a large circular div: `bg-blue-600 rounded-full shadow-lg h-32 w-32 flex items-center justify-center text-white active:scale-95 transition-all`.
-- **Demo Presets Menu:** Below the camera, create a clean list of 5 buttons for the investor demo presets. Style them as rounded-xl cards with subtle borders and clear typography.
-- **Results Modal:** When a result is generated, it must be undeniable. The status badge must span the full width of the card. Use `text-lg font-semibold` for the plain-language explanation.
-- **Passport Timeline:** Style the history list with a left-aligned vertical border to simulate a timeline (`border-l-2 border-slate-200 ml-4 pl-4 relative`).
+- **The Camera Button:** a 112px gradient lens inside a 160px targeting ring —
+  a soft halo, a solid ring and a dashed inner ring. While a read is in flight
+  the halo pulses and a scanline sweeps the lens.
+- **Demo Presets:** `.panel` cards, each with a glowing dot in its tier colour.
+- **Results Modal:** the verdict must be undeniable. The status badge spans the
+  card and carries its tier's bloom; the plain-language explanation is
+  `text-base` on `text-slate-300`.
+- **Passport Timeline:** a left rail (`border-l border-white/10`) with node dots
+  ringed in the shell colour so they read as lights on a wire.
+
+## 5. Non-negotiables
+- **Contrast:** every text node must clear WCAG AA against its own background —
+  4.5:1 normally, 3:1 for large or bold. `npm run verify:styles` catches
+  utilities that silently fail to compile, which on a dark shell fall back to
+  `currentColor` and turn hairlines into solid white bars.
+- **Muted text is slate-400, never slate-500.** At 12px, slate-500 measures
+  3.98:1 on the shell and fails AA.
+- **Motion respects `prefers-reduced-motion`**; all of it is decorative.
