@@ -151,12 +151,41 @@ function coerceProfile(raw: unknown): AthleteProfile {
  */
 const OCR_BUDGET_MS = 30_000;
 
-type FailureKind = "quota" | "unavailable" | "other";
+type FailureKind = "quota" | "unavailable" | "network" | "timeout" | "other";
 
+/**
+ * Classify a failure so the chain knows whether to keep going, and so the
+ * athlete gets a message they can act on.
+ *
+ * Connection errors must be recoverable: a single ETIMEDOUT reaching Google
+ * is transient, and treating it as fatal aborted the whole chain on a blip.
+ * The error chain is walked because the AI SDK wraps the socket error inside
+ * an APICallError, and the outer message alone does not name the cause.
+ */
 function classify(error: unknown): FailureKind {
-  const message = error instanceof Error ? error.message : String(error);
+  const parts: string[] = [];
+  let cur: unknown = error;
+  for (let depth = 0; cur && depth < 6; depth++) {
+    if (cur instanceof Error) {
+      parts.push(cur.name, cur.message);
+      const code = (cur as NodeJS.ErrnoException).code;
+      if (code) parts.push(code);
+      cur = (cur as { cause?: unknown }).cause;
+    } else {
+      parts.push(String(cur));
+      break;
+    }
+  }
+  const message = parts.join(" ");
+
   if (/RESOURCE_EXHAUSTED|exceeded your current quota|quota|rate limit|429/i.test(message)) {
     return "quota";
+  }
+  if (/\bTimeoutError\b|\bAbortError\b|operation was aborted/i.test(message)) {
+    return "timeout";
+  }
+  if (/ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|EPIPE|socket hang up|Cannot connect to API|fetch failed/i.test(message)) {
+    return "network";
   }
   if (/no longer available|not found|high demand|overloaded|unavailable|503/i.test(message)) {
     return "unavailable";
@@ -189,6 +218,8 @@ async function extractWithGemini(
   const startedAt = Date.now();
   let lastError: unknown;
   let sawQuota = false;
+  let sawNetwork = false;
+  let sawTimeout = false;
 
   for (const model of MODEL_CHAIN) {
     const remaining = OCR_BUDGET_MS - (Date.now() - startedAt);
@@ -199,9 +230,9 @@ async function extractWithGemini(
       const result = await generateObject({
         model: google(model),
         schema: extractionSchema,
-        // The chain IS the retry strategy; per-call retries only multiply the
-        // wait on an error that will not clear in seconds.
-        maxRetries: 0,
+        // One retry absorbs a transient socket failure; the chain handles
+        // everything slower-moving, and OCR_BUDGET_MS bounds the worst case.
+        maxRetries: 1,
         abortSignal: AbortSignal.timeout(remaining),
         messages: [
           {
@@ -226,13 +257,25 @@ async function extractWithGemini(
       lastError = cause;
       const kind = classify(cause);
       if (kind === "quota") sawQuota = true;
+      if (kind === "network") sawNetwork = true;
+      if (kind === "timeout") sawTimeout = true;
       console.error(`[scan] model ${model} failed (${kind}):`, cause);
       if (kind === "other") throw new ExtractionFailure("other", cause);
-      // Quota is per-model, so the next model in the chain may still work.
+      // Quota is per-model and network faults are transient, so the next
+      // model in the chain may still succeed.
     }
   }
 
-  throw new ExtractionFailure(sawQuota ? "quota" : "unavailable", lastError);
+  throw new ExtractionFailure(
+    sawQuota
+      ? "quota"
+      : sawNetwork
+        ? "network"
+        : sawTimeout
+          ? "timeout"
+          : "unavailable",
+    lastError,
+  );
 }
 
 /* ------------------------------------------------------------------ *
@@ -344,7 +387,11 @@ export async function POST(request: Request) {
         warning =
           kind === "quota"
             ? "The daily free-tier limit for label scanning has been reached. It resets within 24 hours — enter the ingredients manually in the meantime."
-            : kind === "unavailable"
+            : kind === "network"
+              ? "Could not reach the label-scanning service — this is usually a connection problem. Try again, or enter the ingredients manually."
+              : kind === "timeout"
+                ? "Label scanning is busy and took too long, so it was stopped. Try again in a moment, or enter the ingredients manually."
+                : kind === "unavailable"
               ? "The label-scanning service is temporarily unavailable. Enter the ingredients manually or use a demo preset."
               : "Label OCR failed, so no ingredients could be read. Enter them manually or use a demo preset.";
       }
