@@ -188,7 +188,13 @@ export function geminiKeys(): string[] {
 }
 
 export function openRouterKeys(): string[] {
-  return listEnvKeys("OPENROUTER_API_KEY");
+  // OPENROUTER_API is accepted too: it is the obvious way to misname this,
+  // and silently ignoring a valid key is a worse failure than tolerating a
+  // variant spelling.
+  return listEnvKeys("OPENROUTER_API_KEY", [
+    "OPENROUTER_API",
+    "OPENROUTER_KEY",
+  ]);
 }
 
 function csv(value: string | undefined, fallback: string[]): string[] {
@@ -488,15 +494,23 @@ export async function extractLabel(imageBase64: string): Promise<VisionResult> {
           cause,
         );
 
-        if (kind === "quota" || kind === "auth") {
+        // Quota is metered per MODEL, not per credential — Gemini reports
+        // GenerateRequestsPerDayPerProjectPerModel, and OpenRouter's free
+        // models have their own limits. Skipping a credential's remaining
+        // models on one 429 therefore discards allowance that is still
+        // there: two keys times three models is six separate daily budgets,
+        // not one.
+        if (kind === "auth") {
+          // A rejected credential fails identically on every model.
           deadCredentials.add(attempt.credentialId);
           break;
         }
         if (kind === "timeout") {
-          // It stalled once; its other models are behind the same endpoint.
+          // It stalled once; its other models sit behind the same endpoint.
           deadCredentials.add(attempt.credentialId);
           break;
         }
+        if (kind === "quota") break; // next model on this same credential
         if (kind === "network" && tries === 0) continue;
         break;
       }
