@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ui-sans-serif, system-ui, sans-serif;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* The page behind the mobile shell is darker so the shell reads as a
+     device frame on desktop, per DESIGN.md §2. */
+  body {
+    @apply bg-slate-200 text-slate-900 antialiased;
+  }
+
+  button,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  /* Hide the native file input without removing it from the a11y tree. */
+  .sr-file {
+    @apply absolute h-0 w-0 overflow-hidden opacity-0;
+  }
+}
